@@ -15,6 +15,8 @@
 #define DATA_LEN    	128*128
 #define LED_FREQUENCY   1000    /*Hz*/
 #define FILTER_DIFF 	10
+#define TOLERANCE	20
+
 
 
 const int cDecay = (2 * 256) / 60;
@@ -31,6 +33,27 @@ Edvs::EventCapture capture;
 std::thread thd;
 
 int run;
+
+
+void stop()
+{
+	run = 0;
+}
+
+
+short get_direction()
+{
+	short result = 0;
+	if(current_adjustment[0] < -TOLERANCE)
+		result |= ((short)'L') << 8;
+	else if(current_adjustment[0] > TOLERANCE)
+ 		result |= ((short)'R') << 8;
+	if(current_adjustment[1] < -TOLERANCE)
+		result |= ((short)'U');
+	else if(current_adjustment[1] > TOLERANCE)
+ 		result |= ((short)'D');
+	return result;	
+}
 
 
 void OnEvent(const std::vector<Edvs::Event>& events)
@@ -92,8 +115,10 @@ void update()
 	//memset(nactive, 0, DATA_LEN);
 	nactive = adjust(last, first);
 	memcpy(current_adjustment, nactive, 4);
-#if PRINT_ADJUSTMENT
+#if PRINT_EDVS_POS_INFO
 	printf("x: %d\ty: %d\n", current_adjustment[0],current_adjustment[1]);
+	first = get_direction();
+	printf("horizontal: %c\tvertical: %c\n", ((char)(first>>8)), (char) first & 0xff);
 #endif
 	free(nactive);
 }
