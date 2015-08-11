@@ -9,12 +9,6 @@
 
 
 
-
-
-
-const int cDecay = (2 * 256) / 60;
-const int cDisplaySize = 512;
-const int cUpdateInterval = FILTER_DIFF*2;
 const Edvs::Baudrate cBaudrate = Edvs::B4000k;
 
 
@@ -79,17 +73,17 @@ void MainWindow::update_timer()
     mat = cv::Mat(128,128,CV_8UC1, dat);
 
     _orb.get()->detect(mat, kp);
-    _orb.get()->compute(mat, kp, desc);
+    //_orb.get()->compute(mat, kp, desc);
 
     //for(std::vector<cv::KeyPoint>::iterator it = kp.begin(); it != kp.end(); it++)
     //    img.setPixel(static_cast<int>(it->pt.x), static_cast<int>(it->pt.y), qRgb(217,255,0));
-    //cv::drawKeypoints(mat, kp, desc, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-    /*for(y = 0; y < desc.rows; y++)
+    cv::drawKeypoints(mat, kp, desc, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    for(y = 0; y < desc.rows; y++)
     {
         for(x = 0; x < desc.cols; x++){
             img.setPixel(x,y,qRgb(desc.at<uint8_t>(y,x),desc.at<uint8_t>(y,x),desc.at<uint8_t>(y,x)));
         }
-    }*/
+    }
     //_orb.get()->compute(mat, kp, desc);
     /*if(!kp.empty())
     {
