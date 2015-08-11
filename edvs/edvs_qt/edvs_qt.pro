@@ -23,4 +23,5 @@ FORMS    += mainwindow.ui
 INCLUDEPATH +=
 
 
-LIBS += -lboost_thread -lboost_system
+LIBS += -L/usr/local/lib -lboost_thread -lboost_system -lopencv_features2d -lopencv_core -lopencv_imgcodecs
+

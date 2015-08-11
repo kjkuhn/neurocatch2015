@@ -4,6 +4,12 @@
 #include <QMainWindow>
 #include "Edvs.h"
 #include <vector>
+//#include "opencv/cv.h"
+#include "opencv2/xfeatures2d.hpp"
+#include "opencv2/videoio.hpp"
+#include "opencv2/opencv.hpp"
+#include "opencv2/core.hpp"
+
 
 
 #define DATA1       	data_buffer[0]
@@ -12,7 +18,7 @@
 #define LED_FREQUENCY   1000    /*Hz*/
 #define FILTER_DIFF 	10
 #define TOLERANCE       20
-#define UPDATE_INTERVAL 10
+#define UPDATE_INTERVAL 20
 
 
 namespace Ui {
@@ -42,6 +48,7 @@ private:
     Edvs::EventCapture capture;
     QTimer *timer;
     QImage img;
+    cv::Ptr<cv::ORB> _orb;
 
     bool __capture;
 };
