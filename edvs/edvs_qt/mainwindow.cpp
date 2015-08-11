@@ -79,10 +79,11 @@ void MainWindow::update_timer()
     mat = cv::Mat(128,128,CV_8UC1, dat);
 
     _orb.get()->detect(mat, kp);
+    _orb.get()->compute(mat, kp, desc);
 
     //for(std::vector<cv::KeyPoint>::iterator it = kp.begin(); it != kp.end(); it++)
     //    img.setPixel(static_cast<int>(it->pt.x), static_cast<int>(it->pt.y), qRgb(217,255,0));
-    cv::drawKeypoints(mat, kp, desc, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    //cv::drawKeypoints(mat, kp, desc, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
     /*for(y = 0; y < desc.rows; y++)
     {
         for(x = 0; x < desc.cols; x++){
