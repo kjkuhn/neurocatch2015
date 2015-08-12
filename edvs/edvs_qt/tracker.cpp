@@ -74,7 +74,7 @@ void Tracker::process()
     matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
     //std::deque<cv::Mat>::iterator it1, it0;
     std::vector<cv::DMatch>matches, good_matches;
-    int it;
+    unsigned int it;
     double max_dist, min_dist;
     QImage qimg = QImage(128,128,QImage::Format_RGB32);
     std::vector<cv::KeyPoint> good_old, good_new;
@@ -138,11 +138,27 @@ void Tracker::process()
                 {
                     if(matches[i].distance <= 3 * min_dist) good_matches.push_back(matches[i]);
                 }
-                for(int i = 0; i < good_matches.size(); i++)
+                for(unsigned int i = 0; i < good_matches.size(); i++)
                 {
                     good_old.push_back(keypoints[it][good_matches[i].trainIdx]);
                     good_new.push_back(kp[good_matches[i].queryIdx]);
                 }
+                /*cv::Mat img2(128,128,CV_8UC1, images[it]);
+                cv::Mat outImg;
+                try
+                {
+                cv::drawMatches(img, kp, img2, keypoints[it], matches, outImg);
+                qimg = QImage(outImg.cols, outImg.rows, QImage::Format_RGB32);
+                for(int y = 0; y < outImg.rows; y++)
+                    for(int x = 0; x < outImg.cols; x++)
+                        qimg.setPixel(x,y, qRgb(outImg.at<uint8_t>(y,x),outImg.at<uint8_t>(y,x),outImg.at<uint8_t>(y,x)));
+                emit sendFrame(&qimg);
+                }
+                catch(int err)
+                {
+
+                }
+                */
                 keypoints[it] = good_old;
                 keypoints[it+1] = good_new;
                 orb.get()->compute(img, good_new, desc);
