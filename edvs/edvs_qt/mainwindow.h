@@ -37,6 +37,7 @@ public:
 public slots:
     void update_timer();
     void recButtonClicked();
+    void update_key_label(QImage *img);
 
 private:
     Ui::MainWindow *ui;
@@ -49,7 +50,7 @@ private:
     QTimer *timer;
     QImage img;
     cv::Ptr<cv::ORB> _orb;
-    neurocatch::Tracker tracker;
+    neurocatch::Tracker *tracker;
 
     bool __capture;
 };

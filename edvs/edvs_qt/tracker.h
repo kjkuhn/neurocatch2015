@@ -8,6 +8,7 @@
 #include "opencv2/core.hpp"
 #include "vector"
 #include "queue"
+#include "deque"
 #include "thread"
 #include "mutex"
 #include "semaphore.h"
@@ -24,16 +25,22 @@ public:
     Tracker();
     ~Tracker();
 
-    void add_to_wl(const uint8_t *buf, size_t rows=128, size_t cols=128);
+    void add_to_wl(uint8_t *buf, size_t rows=128, size_t cols=128);
+    void getKeyPoints(std::vector<cv::KeyPoint>&);
+
+signals:
+    void sendFrame(QImage *img);
 
 private:
     cv::Ptr<cv::ORB> orb;
     std::thread worker;
-    std::queue<cv::Mat> wl;     //working list
+    std::queue<uint8_t*> wl;     //working list
     sem_t wl_count;
     std::mutex wl_mtx;
-    std::atomic<bool> run;
-    std::vector<cv::Mat> descriptors;
+    std::atomic<bool> run, object_present;
+    std::deque<cv::Mat> descriptors;
+    std::deque<std::vector<cv::KeyPoint>> keypoints;
+    std::deque<uint8_t*> images;
 
     void process();
 };
