@@ -13,15 +13,23 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    tracker.cpp
 
 HEADERS  += mainwindow.h \
-    Edvs.h
+    Edvs.h \
+    tracker.h
 
 FORMS    += mainwindow.ui
 
 INCLUDEPATH +=
 
 
-LIBS += -L/usr/local/lib -lboost_thread -lboost_system -lopencv_features2d -lopencv_core -lopencv_imgcodecs
+QMAKE_CXXFLAGS += -std=c++11
+
+
+LIBS += -L/usr/local/lib \
+    -lboost_thread -lboost_system \
+    -lopencv_features2d -lopencv_core \
+    -lopencv_imgcodecs -lpthread
 

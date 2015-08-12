@@ -8,6 +8,7 @@
 #include "opencv2/videoio.hpp"
 #include "opencv2/opencv.hpp"
 #include "opencv2/core.hpp"
+#include "tracker.h"
 
 
 
@@ -48,6 +49,7 @@ private:
     QTimer *timer;
     QImage img;
     cv::Ptr<cv::ORB> _orb;
+    neurocatch::Tracker tracker;
 
     bool __capture;
 };
