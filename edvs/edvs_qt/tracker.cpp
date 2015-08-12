@@ -136,7 +136,7 @@ void Tracker::process()
                 //get good matches
                 for(int i = 0; i < descriptors[it].rows; i++)
                 {
-                    if(matches[i].distance < 2 * min_dist) good_matches.push_back(matches[i]);
+                    if(matches[i].distance <= 3 * min_dist) good_matches.push_back(matches[i]);
                 }
                 for(int i = 0; i < good_matches.size(); i++)
                 {
