@@ -28,6 +28,14 @@ MainWindow::MainWindow(QWidget *parent) :
     tracker = new neurocatch::Tracker();
     connect(tracker, &neurocatch::Tracker::sendFrame, this, &MainWindow::update_key_label);
     __capture = false;
+#if !DEBUG
+    ui->keys->hide();
+#else
+    ui->keys->setMinimumHeight(500);
+    ui->keys->setMidLineWidth(500);
+#endif
+    ui->label->setMinimumHeight(500);
+    ui->label->setMidLineWidth(500);
 #if ONLINE
     connect(ui->recCtrl, SIGNAL(clicked()), this, SLOT(recButtonClicked()));
     memset(DATA1, 0, DATA_LEN);
@@ -37,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
     capture = Edvs::EventCapture(device, boost::bind(&MainWindow::OnEvent, this, _1));
 #else
     _file = fopen(FILE_NAME,"r");
+    ui->recCtrl->hide();
 #endif
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));

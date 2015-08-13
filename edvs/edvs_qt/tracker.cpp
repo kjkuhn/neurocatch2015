@@ -19,6 +19,9 @@
 #define T_MIN_MATCHES   50
 #endif
 
+
+
+
 namespace neurocatch
 {
 
@@ -101,15 +104,6 @@ void Tracker::calculate(uint8_t *raw_img)
 
     img = cv::Mat(128,128,CV_8UC1, raw_img);
     orb.get()->detect(img, kp);
-    /*for(int y = 0; y < img.rows; y++)
-    {
-        for(int x = 0; x < img.cols; x++)
-        {
-            qimg.setPixel(x, y, qRgb(img.at<uint8_t>(y,x),0,0));
-        }
-    }
-    emit sendFrame(&qimg);
-    */
     orb.get()->compute(img, kp, desc);
     if(descriptors.size() < T_NUM_OBJ_DESC)
     {

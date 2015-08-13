@@ -18,7 +18,8 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     Edvs.h \
-    tracker.h
+    tracker.h \
+    settings.h
 
 FORMS    += mainwindow.ui
 

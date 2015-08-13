@@ -13,6 +13,7 @@
 #include "mutex"
 #include "semaphore.h"
 #include <atomic>
+#include "settings.h"
 
 
 namespace neurocatch{
