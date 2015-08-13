@@ -7,6 +7,9 @@
 #include "qimage.h"
 
 
+#define DATA1       	data_buffer[0]
+#define DATA2       	data_buffer[1]
+
 
 
 
