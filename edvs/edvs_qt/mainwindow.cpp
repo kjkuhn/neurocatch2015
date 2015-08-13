@@ -6,8 +6,7 @@
 #include "qtimer.h"
 #include "qimage.h"
 
-#define ONLINE 0
-#define FILE_NAME "edvs_frames.dat"
+
 
 
 
