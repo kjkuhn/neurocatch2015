@@ -7,6 +7,7 @@
 #include "qimage.h"
 
 #define ONLINE 0
+#define FILE_NAME "edvs_frames.dat"
 
 
 
@@ -35,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
     device = Edvs::Device(cBaudrate);
     capture = Edvs::EventCapture(device, boost::bind(&MainWindow::OnEvent, this, _1));
 #else
-    _file = fopen("edvs_frames.dat","r");
+    _file = fopen(FILE_NAME,"r");
 #endif
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));
@@ -56,7 +57,11 @@ void MainWindow::OnEvent(const std::vector<Edvs::Event>& events)
 }
 
 
-void MainWindow::update_key_label(QImage *img){ui->keys->setPixmap(QPixmap::fromImage(img->scaled(ui->keys->width(), ui->keys->height())));}
+void MainWindow::update_key_label(QImage *img)
+{
+    ui->keys->setPixmap(QPixmap::fromImage(img->scaled(ui->keys->width(), ui->keys->height())));
+}
+
 
 #ifndef __OLD
 void MainWindow::update_timer()
@@ -87,7 +92,7 @@ void MainWindow::update_timer()
 #else
     uint8_t dat[DATA_LEN];
     if(feof(_file))
-        fseek(file, 0, SEEK_SET);
+        freopen(FILE_NAME, "r", _file);
     fread(dat, 1, DATA_LEN, _file);
 #endif
     tracker->add_to_wl(dat);

@@ -43,6 +43,7 @@ private:
     std::deque<uint8_t*> images;
 
     void process();
+    void calculate(uint8_t*);
 };
 
 } /*neurocatch*/
