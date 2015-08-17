@@ -33,5 +33,6 @@ LIBS += -L/usr/local/lib \
     -lboost_thread -lboost_system \
     -lopencv_features2d -lopencv_core \
     -lopencv_highgui -lopencv_imgproc\
+    -lopencv_calib3d \
     -lopencv_imgcodecs -lpthread
 

@@ -107,9 +107,6 @@ void Tracker::calculate(uint8_t *raw_img)
     unsigned int it, i;
     double max_dist, min_dist;
     std::vector<cv::KeyPoint> good_old, good_new;
-//#if DEBUG
-//    QImage qimg;// = QImage(128,128,QImage::Format_RGB32);
-//#endif
 
     unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
     cv::blur(unfiltered, img, cv::Size(5,5));
@@ -181,10 +178,8 @@ void Tracker::calculate(uint8_t *raw_img)
 */
 
 #if DEBUG
-            cv::Mat img2(128,128,CV_8UC1, images[it]);
-            cv::Mat outImg;
-            try
-            {
+//            cv::Mat img2(128,128,CV_8UC1, images[it]);
+//            cv::Mat outImg;
             //cv::drawKeypoints(img2, keypoints[it], outImg, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
             //qimg = QImage(outImg.cols, outImg.rows, QImage::Format_RGB32);
             /*for(int y = 0; y < outImg.rows; y++)
@@ -194,45 +189,19 @@ void Tracker::calculate(uint8_t *raw_img)
             qimg = QImage(128,128, QImage::Format_RGB32);
             for(int x = 0; x < 128; x++)
                 for(int y = 0; y < 128;y++)
-                {   try
-                    {
-                        qimg.setPixel(x,y,0);
-                    }
-                    catch(int err)
-                    {
-                        fprintf(stderr,"error in reset (debug)\n");
-                    }
+                {
+                    qimg.setPixel(x,y,0);
                 }
 
             for(unsigned int x = 0; x < good_old.size(); x++)
             {
-                try
-                {
-                    qimg.setPixel(good_old[x].pt.x, good_old[x].pt.y, qRgb(217,255,0));
-                }
-                catch(int err)
-                {
-                    fprintf(stderr,"error in debug block fst loop\n");
-                }
+                qimg.setPixel(good_old[x].pt.x, good_old[x].pt.y, qRgb(217,255,0));
             }
             for(unsigned int x = 0; x < good_new.size(); x++)
             {
-                try
-                {
-                    qimg.setPixel(good_new[x].pt.x, good_new[x].pt.y, qRgb(0,255,217));
-                }
-                catch(int err)
-                {
-                    fprintf(stderr,"error in debug block snd loop\n");
-                }
+                qimg.setPixel(good_new[x].pt.x, good_new[x].pt.y, qRgb(0,255,217));
             }
             emit sendFrame(&qimg);
-            }
-            catch(int err)
-            {
-
-            }
-
 #endif
 /*
             keypoints[it] = good_old;
@@ -251,10 +220,6 @@ void Tracker::calculate(uint8_t *raw_img)
         {
             object_present.store(true);
             sprintf(&str_info[strlen(str_info)], "\nobject detected!");
-            //copy data for tracking
-            images.push_back(images[images.size()-1]);
-            keypoints.push_back(keypoints[keypoints.size()-1]);
-            descriptors.push_back(descriptors.size()-1);
             emit send_info(str_info);
 #if DEBUG
             qimg = QImage(128,128, QImage::Format_RGB32);
@@ -264,20 +229,8 @@ void Tracker::calculate(uint8_t *raw_img)
             for(unsigned int i = 0; i < keypoints.size(); i++)
                 for(unsigned int j = 0; j < keypoints[i].size(); j++)
                 {
-                    //if(i==0)
-                    try{
-                        qimg.setPixel(keypoints[i][j].pt.x, keypoints[i][j].pt.y,
+                    qimg.setPixel(keypoints[i][j].pt.x, keypoints[i][j].pt.y,
                                       qRgb((30*i+70)%255,(60*i+40)%255,(90*i+50)%255));
-                    }
-                    catch(int err)
-                    {
-                        fprintf(stderr,"error in debug block\n");
-                    }
-
-                    //else if(i == 1)
-                    //    qimg.setPixel(keypoints[i][j].pt.x, keypoints[i][j].pt.y, qRgb(0,255,0));
-                    //else
-                    //    qimg.setPixel(keypoints[i][j].pt.x, keypoints[i][j].pt.y, qRgb(0,0,255));
                 }
             emit sendFrame(&qimg);
 #endif
@@ -285,6 +238,52 @@ void Tracker::calculate(uint8_t *raw_img)
     }
     else
     {
+        for(it = images.size()-1; (int)it >= 0 ; it--)
+        {
+            matcher.get()->match(desc, descriptors[it], matches);
+            if(matches.size() >= T_MIN_MATCHES)
+                break;
+        }
+        if(matches.size() >= T_MIN_MATCHES)
+        {
+            //object present??
+            max_dist = 0;
+            min_dist = 100;
+            //get min/max distance
+            for(i = 0; i < (unsigned int)descriptors[it].rows; i++)
+            {
+                if(matches[i].distance < min_dist) min_dist = matches[i].distance;
+                if(matches[i].distance > max_dist) max_dist = matches[i].distance;
+            }
+            //get good matches
+            for(i = 0; i < matches.size(); i++)
+            {
+                if(matches[i].distance <= 3 * min_dist)
+                    good_matches.push_back(matches[i]);
+            }
+            min_dist = 0;
+            max_dist = 0;
+            for(i = 0; i < (unsigned int)good_matches.size(); i++)
+            {
+                //if(kp[good_matches[i].queryIdx].pt.x != 0)
+                    max_dist += (double)(kp[good_matches[i].queryIdx].pt.x -64);
+                //if(kp[good_matches[i].queryIdx].pt.y != 0)
+                    min_dist += (double)(kp[good_matches[i].queryIdx].pt.y -64);
+            }
+            max_dist /= (double)i > 0 ? i : 1;
+            min_dist /= (double)i > 0 ? i : 1;
+            sprintf(str_info, "xdirection: %f\tydirection: %f\n", max_dist, min_dist);
+            emit send_info(str_info);
+#if DEBUG
+            qimg = QImage(128,128, QImage::Format_RGB32);
+            for(int x = 0; x < 128; x++)
+                for(int y = 0; y < 128;y++)
+                    qimg.setPixel(x,y,0);
+            for(i = 0; i < (unsigned int)good_matches.size(); i++)
+                qimg.setPixel(kp[good_matches[i].queryIdx].pt.x, kp[good_matches[i].queryIdx].pt.y, qRgb(217,100,50));
+            emit sendFrame(&qimg);
+#endif
+        }
         free(raw_img);
     }
 }

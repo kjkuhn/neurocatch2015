@@ -19,7 +19,7 @@
 #define LED_FREQUENCY       1000    /*Hz*/
 #define FILTER_DIFF         10
 #define TOLERANCE           20
-#define UPDATE_INTERVAL     500
+#define UPDATE_INTERVAL     20
 
 
 #endif // SETTINGS
