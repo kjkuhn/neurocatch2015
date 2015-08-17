@@ -122,7 +122,7 @@ void Tracker::calculate(uint8_t *raw_img)
         for(it = 0; it < descriptors.size()-1; it++)
         {
             matcher.get()->match(descriptors[descriptors.size()-1], descriptors[it], matches);
-            sprintf(str_info, "#keypoints:\t%lu\n#descriptors:\t%d\n#matches:\t%lu\n#images:\t%u",
+            sprintf(str_info, "#keypoints:\t%u\n#descriptors:\t%d\n#matches:\t%u\n#images:\t%u",
                     kp.size(), desc.rows, matches.size(), img_count);
             emit send_info((const char*)str_info);
             if(matches.size() < T_MIN_MATCHES)
