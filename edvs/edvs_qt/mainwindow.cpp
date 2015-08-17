@@ -36,13 +36,15 @@ MainWindow::MainWindow(QWidget *parent) :
     __capture = false;
 #if !DEBUG
     ui->keys->hide();
-    ui->label->setFixedSize(500,500);
+    //ui->label->setFixedSize(500,500);
 #else
-    ui->keys->setMinimumHeight(500);
-    ui->keys->setMinimumWidth(500);
+    //ui->keys->setMinimumHeight(500);
+    //ui->keys->setMinimumWidth(500);
+    ui->keys->setFixedSize(FRAME_WIDTH, FRAME_HEIGHT);
 #endif
-    ui->label->setMinimumHeight(500);
-    ui->label->setMinimumWidth(500);
+    //ui->label->setMinimumHeight(500);
+    //ui->label->setMinimumWidth(500);
+    ui->label->setFixedSize(FRAME_WIDTH, FRAME_HEIGHT);
 #if ONLINE
     connect(ui->recCtrl, SIGNAL(clicked()), this, SLOT(recButtonClicked()));
     memset(DATA1, 0, DATA_LEN);
