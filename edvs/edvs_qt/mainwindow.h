@@ -12,7 +12,6 @@
 #include "settings.h"
 
 
-
 namespace Ui {
 class MainWindow;
 }
@@ -30,6 +29,7 @@ public slots:
     void update_timer();
     void recButtonClicked();
     void update_key_label(QImage *img);
+    void update_info(const char *str);
 
 private:
     Ui::MainWindow *ui;

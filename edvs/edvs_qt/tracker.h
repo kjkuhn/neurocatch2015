@@ -31,6 +31,7 @@ public:
 
 signals:
     void sendFrame(QImage *img);
+    void send_info(const char *str);
 
 private:
     cv::Ptr<cv::ORB> orb;

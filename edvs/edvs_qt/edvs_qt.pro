@@ -32,6 +32,6 @@ QMAKE_CXXFLAGS += -std=c++11
 LIBS += -L/usr/local/lib \
     -lboost_thread -lboost_system \
     -lopencv_features2d -lopencv_core \
-    -lopencv_highgui \
+    -lopencv_highgui -lopencv_imgproc\
     -lopencv_imgcodecs -lpthread
 
