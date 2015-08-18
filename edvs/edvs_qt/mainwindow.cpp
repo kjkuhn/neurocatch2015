@@ -27,14 +27,16 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->recCtrl->setText("Start");
-    _orb = cv::ORB::create(500, 2, 8, 2, 0,4,cv::ORB::FAST_SCORE, 2, 20);
+    //_orb = cv::ORB::create(500, 2, 8, 2, 0,4,cv::ORB::FAST_SCORE, 2, 20);
 
     img = QImage(Edvs::cDeviceDisplaySize/*2448*/, /*3264*/Edvs::cDeviceDisplaySize, QImage::Format_RGB32);
+#if !DISPLAY_ONLY
     tracker = new neurocatch::Tracker();
     connect(tracker, &neurocatch::Tracker::sendFrame, this, &MainWindow::update_key_label);
     connect(tracker, &neurocatch::Tracker::send_info, this, &MainWindow::update_info);
+#endif
     __capture = false;
-#if !DEBUG
+#if !DEBUG  ||  DISPLAY_ONLY
     ui->keys->hide();
     //ui->label->setFixedSize(500,500);
 #else
@@ -52,8 +54,10 @@ MainWindow::MainWindow(QWidget *parent) :
     active = DATA1;
     device = Edvs::Device(cBaudrate);
     capture = Edvs::EventCapture(device, boost::bind(&MainWindow::OnEvent, this, _1));
+    _file = fopen(EDVS_OUT_FILE, "wb");
+    fclose(_file);
 #else
-    _file = fopen(FILE_NAME,"r");
+    _file = fopen(OFFLINE_FILE,"r");
     ui->recCtrl->hide();
 #endif
     timer = new QTimer(this);
@@ -91,15 +95,15 @@ void MainWindow::update_info(const char *str)
 void MainWindow::update_timer()
 {
 
-    cv::Mat mat;
-    std::vector<cv::KeyPoint> kp;
+    //cv::Mat mat;
+    //std::vector<cv::KeyPoint> kp;
 
     int i;
 #if ONLINE
     uint8_t *dat;
     FILE *file;
-    cv::Mat desc;
-    cv::KeyPoint *k;
+    //cv::Mat desc;
+    //cv::KeyPoint *k;
 
 
     dat = active;
@@ -111,14 +115,14 @@ void MainWindow::update_timer()
     }
     if(__capture)
     {
-        file = fopen("edvs_frames.dat", "ab");
+        file = fopen(EDVS_OUT_FILE, "ab");
         fwrite(dat, 1, DATA_LEN, file);
         fclose(file);
     }
 #else
     uint8_t dat[DATA_LEN];
     if(feof(_file))
-        freopen(FILE_NAME, "r", _file);
+        freopen(OFFLINE_FILE, "r", _file);
     fread(dat, 1, DATA_LEN, _file);
     /*
     cv::Mat out;
@@ -136,10 +140,13 @@ void MainWindow::update_timer()
         img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
     }
 #endif
-    tracker->add_to_wl(dat);
-    mat = cv::Mat(128,128,CV_8UC1, dat);
 
-    _orb.get()->detect(mat, kp);
+#if !DISPLAY_ONLY
+    tracker->add_to_wl(dat);
+#endif
+    //mat = cv::Mat(128,128,CV_8UC1, dat);
+
+    //_orb.get()->detect(mat, kp);
     //_orb.get()->compute(mat, kp, desc);
 
     //for(std::vector<cv::KeyPoint>::iterator it = kp.begin(); it != kp.end(); it++)

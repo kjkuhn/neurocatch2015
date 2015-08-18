@@ -121,7 +121,8 @@ void Tracker::calculate(uint8_t *raw_img)
             return;
         for(it = 0; it < descriptors.size()-1; it++)
         {
-            matcher.get()->match(descriptors[descriptors.size()-1], descriptors[it], matches);
+            if(descriptors[it].cols == descriptors[descriptors.size()-1].cols)
+                matcher.get()->match(descriptors[descriptors.size()-1], descriptors[it], matches);
             sprintf(str_info, "#keypoints:\t%lu\n#descriptors:\t%d\n#matches:\t%lu\n#images:\t%u",
                     kp.size(), desc.rows, matches.size(), img_count);
             emit send_info((const char*)str_info);
@@ -142,21 +143,27 @@ void Tracker::calculate(uint8_t *raw_img)
             max_dist = 0;
             min_dist = 100;
             //get min/max distance
-            for(i = 0; i < (unsigned int)descriptors[it].rows; i++)
+            for(i = 0; i < (unsigned int)matches.size(); i++)
             {
                 if(matches[i].distance < min_dist) min_dist = matches[i].distance;
                 if(matches[i].distance > max_dist) max_dist = matches[i].distance;
             }
             //get good matches
-            for(i = 0; i < (unsigned int)descriptors[it].rows; i++)
+            for(i = 0; i < (unsigned int)matches.size()/*descriptors[it].rows*/; i++)
             {
-                if(matches[i].distance <= 3 * min_dist) good_matches.push_back(matches[i]);
+                if(matches[i].distance <= 3 * min_dist) //good_matches.push_back(matches[i]);
+                {
+                    good_new.push_back(kp[matches[i].queryIdx]);
+                    good_old.push_back(keypoints[it][matches[i].trainIdx]);
+                }
             }
+            /*
             for(i = 0; i < good_matches.size(); i++)
             {
                 good_old.push_back(keypoints[it][good_matches[i].trainIdx]);
                 good_new.push_back(kp[good_matches[i].queryIdx]);
             }
+            */
 /*
 #if DEBUG
             cv::Mat img2(128,128,CV_8UC1, images[it]);
@@ -202,6 +209,7 @@ void Tracker::calculate(uint8_t *raw_img)
                 qimg.setPixel(good_new[x].pt.x, good_new[x].pt.y, qRgb(0,255,217));
             }
             emit sendFrame(&qimg);
+
 #endif
 /*
             keypoints[it] = good_old;
@@ -215,6 +223,7 @@ void Tracker::calculate(uint8_t *raw_img)
             good_new.clear();
             good_old.clear();
             matches.clear();
+            //good_matches.clear();
         }
         if(descriptors.size() == T_NUM_OBJ_DESC)
         {
@@ -222,6 +231,7 @@ void Tracker::calculate(uint8_t *raw_img)
             sprintf(&str_info[strlen(str_info)], "\nobject detected!");
             emit send_info(str_info);
 #if DEBUG
+
             qimg = QImage(128,128, QImage::Format_RGB32);
             for(int x = 0; x < 128; x++)
                 for(int y = 0; y < 128;y++)
@@ -233,6 +243,7 @@ void Tracker::calculate(uint8_t *raw_img)
                                       qRgb((30*i+70)%255,(60*i+40)%255,(90*i+50)%255));
                 }
             emit sendFrame(&qimg);
+
 #endif
         }
     }
@@ -240,7 +251,9 @@ void Tracker::calculate(uint8_t *raw_img)
     {
         for(it = images.size()-1; (int)it >= 0 ; it--)
         {
-            matcher.get()->match(desc, descriptors[it], matches);
+            if(desc.cols == descriptors[it].cols)
+                matcher.get()->match(desc, descriptors[it], matches);
+            else continue;
             if(matches.size() >= T_MIN_MATCHES)
                 break;
         }
