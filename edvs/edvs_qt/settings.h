@@ -19,9 +19,6 @@
 
 /*---MainWindow---*/
 #define DATA_LEN            128*128
-#define LED_FREQUENCY       1000    /*Hz*/
-#define FILTER_DIFF         10
-#define TOLERANCE           20
 #define UPDATE_INTERVAL     20
 #define FRAME_WIDTH         400
 #define FRAME_HEIGHT        400
