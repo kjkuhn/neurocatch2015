@@ -9,6 +9,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/core.hpp"
 #include "tracker.h"
+#include "framemanager.h"
 #include "settings.h"
 
 
@@ -42,6 +43,7 @@ private:
     QTimer *timer;
     QImage img;
     neurocatch::Tracker *tracker;
+    neurocatch::FrameManager *frame_mgr;
 
     bool __capture;
 };

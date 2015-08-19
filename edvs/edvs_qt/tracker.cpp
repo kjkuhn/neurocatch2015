@@ -44,7 +44,9 @@ Tracker::Tracker()
     sem_init(&this->wl_count, 0, 0);
     this->worker = std::thread(&Tracker::process, this);
     img_count = 0;
-    //cv::namedWindow(T_WINDOW_NAME);
+#if USE_SPHERO
+    sphero = new neurocatch::SpheroController();
+#endif /*USE_SPHERO*/
 }
 
 
@@ -235,7 +237,7 @@ void Tracker::calculate(uint8_t *raw_img)
                 }
             emit sendFrame(&qimg);
 
-#endif
+#endif /*DEBUG*/
         }
     }
     else
@@ -276,6 +278,9 @@ void Tracker::calculate(uint8_t *raw_img)
             }
             max_dist /= (double)i > 0 ? i : 1;
             min_dist /= (double)i > 0 ? i : 1;
+#if USE_SPHERO
+            sphero->setXY(max_dist, min_dist);
+#endif /*USE_SPHERO*/
             sprintf(str_info, "xdirection: %f\tydirection: %f\n", max_dist, min_dist);
             emit send_info(str_info);
 #if DEBUG
@@ -286,7 +291,7 @@ void Tracker::calculate(uint8_t *raw_img)
             for(i = 0; i < (unsigned int)good_matches.size(); i++)
                 qimg.setPixel(kp[good_matches[i].queryIdx].pt.x, kp[good_matches[i].queryIdx].pt.y, qRgb(217,100,50));
             emit sendFrame(&qimg);
-#endif
+#endif /*DEBUG*/
         }
         free(raw_img);
     }

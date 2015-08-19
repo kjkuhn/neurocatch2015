@@ -13,6 +13,7 @@
 #include "mutex"
 #include "semaphore.h"
 #include <atomic>
+#include "spherocontroller.h"
 #include "settings.h"
 
 
@@ -43,6 +44,9 @@ private:
     std::deque<cv::Mat> descriptors;
     std::deque<std::vector<cv::KeyPoint>> keypoints;
     std::deque<uint8_t*> images;
+    neurocatch::SpheroController *sphero;
+
+
 
     void process();
     void calculate(uint8_t*);

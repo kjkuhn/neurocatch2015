@@ -32,14 +32,17 @@ MainWindow::MainWindow(QWidget *parent) :
     tracker = new neurocatch::Tracker();
     connect(tracker, &neurocatch::Tracker::sendFrame, this, &MainWindow::update_key_label);
     connect(tracker, &neurocatch::Tracker::send_info, this, &MainWindow::update_info);
-#endif
+#if SLIDING_FRAMES
+    frame_mgr = new neurocatch::FrameManager();
+#endif /*SLIDING_FRAMES*/
+#endif /*!DISPLAY_ONLY*/
     __capture = false;
 #if !DEBUG  ||  DISPLAY_ONLY
     ui->keys->hide();
 #else
-    ui->keys->setFixedSize(FRAME_WIDTH, FRAME_HEIGHT);
-#endif
-    ui->label->setFixedSize(FRAME_WIDTH, FRAME_HEIGHT);
+    ui->keys->setFixedSize(DISPLAY_FRAME_WIDTH, DISPLAY_FRAME_HEIGHT);
+#endif /*!DEBUG  ||  DISPLAY_ONLY*/
+    ui->label->setFixedSize(DISPLAY_FRAME_WIDTH, DISPLAY_FRAME_HEIGHT);
 #if ONLINE
     connect(ui->recCtrl, SIGNAL(clicked()), this, SLOT(recButtonClicked()));
     memset(DATA1, 0, DATA_LEN);
@@ -52,7 +55,7 @@ MainWindow::MainWindow(QWidget *parent) :
 #else
     _file = fopen(OFFLINE_FILE,"r");
     ui->recCtrl->hide();
-#endif
+#endif /*ONLINE*/
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));
     timer->start(UPDATE_INTERVAL);
@@ -67,7 +70,11 @@ MainWindow::~MainWindow()
 void MainWindow::OnEvent(const std::vector<Edvs::Event>& events)
 {
     for(std::vector<Edvs::Event>::const_iterator it=events.begin(); it!=events.end(); it++) {
+#if !SLIDING_FRAMES
        active[it->y*128+it->x] += 1;
+#else
+       frame_mgr->push_evt(it->y*128+it->x);
+#endif /*!SLIDING_FRAMES*/
     }
 }
 
@@ -93,9 +100,12 @@ void MainWindow::update_timer()
     uint8_t *dat;
     FILE *file;
 
-
+#if !SLIDING_FRAMES
     dat = active;
     active = active == DATA1 ? DATA2 : DATA1;
+#else
+    dat = frame_mgr->next();
+#endif /*!SLIDING_FRAMES*/
     for(i = 0; i < DATA_LEN; i++)
     {
         dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
@@ -117,11 +127,11 @@ void MainWindow::update_timer()
         dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
         img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
     }
-#endif
+#endif /*ONLINE*/
 
 #if !DISPLAY_ONLY
     tracker->add_to_wl(dat);
-#endif
+#endif /*!DISPLAY_ONLY*/
 
     memset(dat, 0, DATA_LEN);
     ui->label->setPixmap(QPixmap::fromImage(img.scaled(ui->label->width(), ui->label->height())));
