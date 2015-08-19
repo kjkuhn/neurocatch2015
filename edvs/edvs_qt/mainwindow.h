@@ -41,7 +41,6 @@ private:
     Edvs::EventCapture capture;
     QTimer *timer;
     QImage img;
-    //cv::Ptr<cv::ORB> _orb;
     neurocatch::Tracker *tracker;
 
     bool __capture;

@@ -121,15 +121,21 @@ void Tracker::calculate(uint8_t *raw_img)
             return;
         for(it = 0; it < descriptors.size()-1; it++)
         {
-            if(descriptors[it].cols == descriptors[descriptors.size()-1].cols)
-                matcher.get()->match(descriptors[descriptors.size()-1], descriptors[it], matches);
+            if(descriptors[it].cols != descriptors[descriptors.size()-1].cols)
+            {
+                descriptors.pop_back();
+                images.pop_back();
+                keypoints.pop_back();
+                free(raw_img);
+                break;
+            }
+            matcher.get()->match(descriptors[descriptors.size()-1], descriptors[it], matches);
             sprintf(str_info, "#keypoints:\t%lu\n#descriptors:\t%d\n#matches:\t%lu\n#images:\t%u",
                     kp.size(), desc.rows, matches.size(), img_count);
             emit send_info((const char*)str_info);
             if(matches.size() < T_MIN_MATCHES)
             {
                 //no object ?
-                //images.clear();
                 while(!images.empty())
                 {
                     free(images.front());
@@ -157,13 +163,6 @@ void Tracker::calculate(uint8_t *raw_img)
                     good_old.push_back(keypoints[it][matches[i].trainIdx]);
                 }
             }
-            /*
-            for(i = 0; i < good_matches.size(); i++)
-            {
-                good_old.push_back(keypoints[it][good_matches[i].trainIdx]);
-                good_new.push_back(kp[good_matches[i].queryIdx]);
-            }
-            */
 /*
 #if DEBUG
             cv::Mat img2(128,128,CV_8UC1, images[it]);
@@ -185,14 +184,7 @@ void Tracker::calculate(uint8_t *raw_img)
 */
 
 #if DEBUG
-//            cv::Mat img2(128,128,CV_8UC1, images[it]);
-//            cv::Mat outImg;
-            //cv::drawKeypoints(img2, keypoints[it], outImg, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-            //qimg = QImage(outImg.cols, outImg.rows, QImage::Format_RGB32);
-            /*for(int y = 0; y < outImg.rows; y++)
-                for(int x = 0; x < outImg.cols; x++)
-                    qimg.setPixel(x,y, qRgb(outImg.at<uint8_t>(y,x),outImg.at<uint8_t>(y,x),outImg.at<uint8_t>(y,x)));
-            */
+
             qimg = QImage(128,128, QImage::Format_RGB32);
             for(int x = 0; x < 128; x++)
                 for(int y = 0; y < 128;y++)
@@ -223,7 +215,6 @@ void Tracker::calculate(uint8_t *raw_img)
             good_new.clear();
             good_old.clear();
             matches.clear();
-            //good_matches.clear();
         }
         if(descriptors.size() == T_NUM_OBJ_DESC)
         {

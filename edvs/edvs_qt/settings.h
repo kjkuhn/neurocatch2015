@@ -14,7 +14,7 @@
 #define T_WINDOW_NAME       "tracker window"
 #define T_NUM_OBJ_DESC      5
 #define T_MIN_MATCHES       15
-#define T_MIN_OBJ_MATCH     15
+
 
 
 /*---MainWindow---*/
