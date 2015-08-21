@@ -272,9 +272,9 @@ void Tracker::calculate(uint8_t *raw_img)
             for(i = 0; i < (unsigned int)good_matches.size(); i++)
             {
                 //if(kp[good_matches[i].queryIdx].pt.x != 0)
-                    max_dist += (double)(kp[good_matches[i].queryIdx].pt.x -64);
+                    max_dist += (double)(kp[good_matches[i].queryIdx].pt.x);
                 //if(kp[good_matches[i].queryIdx].pt.y != 0)
-                    min_dist += (double)(kp[good_matches[i].queryIdx].pt.y -64);
+                    min_dist += (double)(kp[good_matches[i].queryIdx].pt.y);
             }
             max_dist /= (double)i > 0 ? i : 1;
             min_dist /= (double)i > 0 ? i : 1;

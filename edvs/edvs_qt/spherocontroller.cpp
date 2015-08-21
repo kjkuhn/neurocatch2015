@@ -1,9 +1,16 @@
 #include "spherocontroller.h"
 #include "math.h"
 #include "stdio.h"
+#include "stdint.h"
 
 
 #define SPHERO_SET_COLOR(a) sphero->setColor((uint8_t)((a >> 16) & 0xff), (uint8_t)((a >> 8)& 0xff), (uint8_t)(a & 0xff))
+#ifndef PI
+#define PI 3.14159265
+#endif /*PI*/
+#define DEG(a) (a * 180 / PI)
+#define DIRECTION(a, phi) ((uint16_t)((((int)a) < 0 ? 360-(int)a: (int)a) + (int)(phi)))
+
 
 namespace neurocatch
 {
@@ -51,6 +58,7 @@ void SpheroController::signal_obj_present(){object_present.store(true);/*sem_pos
 void SpheroController::controller_loop()
 {
     double xtarget, ytarget;
+    double angle;
     uint32_t rgb;
     FILE *rf;
     auto getRandom = [&]()->void {
@@ -66,7 +74,7 @@ void SpheroController::controller_loop()
     while(!object_present.load())
     {
         sphero->roll(0x2f,(uint16_t)rgb);
-        rgb = (rgb + 180) % 360;
+        rgb = (rgb + 90) % 360;
         sleep(1);
     }
     sphero->roll(0x00, 0);
@@ -76,9 +84,20 @@ void SpheroController::controller_loop()
     ytarget = y.load();
     while(xtarget == x.load() && ytarget == y.load())
     {
-        sphero->roll(0x2f,0);
+        sphero->roll(0x3f,0);
+        sleep(1);
     }
-
+    sphero->roll(0, 0);
+    sleep(2);
+    //TODO: angle setup
+    angle = atan2(y.load()-ytarget, x.load()-xtarget);
+    //sphero->setHeading((uint16_t)DEG(angle));
+    ytarget = DEG(angle);
+    xtarget = DIRECTION(0,-ytarget);
+    sphero->roll(0xff, xtarget);
+    sleep(5);
+    sphero->roll(0,0);
+    //hypot()
     while(run.load())
     {
 
