@@ -18,6 +18,13 @@ int main(int argc, char** argv)
 	s->onConnect([](){std::cout << "connection established" << std::endl;});
 	if(s->connect())
 		std::cout << "all went fine" << std::endl;
+	s->roll(0x2f, 0);
+	sleep(2);
+	s->roll(0,0);
+	sleep(2);
+	s->roll(0x2f, 270);
+	sleep(2);
+	s->roll(0,0);
 	getc(stdin);
 	return 0;
 }
