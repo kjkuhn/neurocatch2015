@@ -5,9 +5,11 @@
 
 ------- Sphero -------
 LINK:
+
 	https://github.com/slock83/sphero-linux-api
 
 SETUP
+
 1.	get the device address:
 		hcitool scan
 
@@ -29,3 +31,8 @@ SETUP
 
 3.	connect the device:
 		sudo rfcomm connect rfcomm0
+
+
+Remark:
+	
+	right-directed angle
