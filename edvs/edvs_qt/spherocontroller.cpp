@@ -24,7 +24,7 @@ SpheroController::SpheroController()
     run.store(true);
     sphero = new Sphero(SPHERO_MAC, new bluez_adaptor());
     sphero->onConnect([&](){ctrl = std::thread(&SpheroController::controller_loop, this);});
-    //sem_init(&obj_present, 0, 0);
+    sem_init(&next_pos, 0, 0);
     object_present.store(false);
     //ctrl = std::thread(&SpheroController::controller_loop, this);
     sphero->connect();
@@ -58,6 +58,9 @@ void SpheroController::setXY(double x, double y)
 void SpheroController::signal_obj_present(){object_present.store(true);/*sem_post(&obj_present);*/}
 
 
+void SpheroController::signal_next_pos(){sem_post(&next_pos);}
+
+
 void SpheroController::controller_loop()
 {
     double xpos, ypos;
@@ -73,6 +76,7 @@ void SpheroController::controller_loop()
             fclose(rf);
             TO_COORDINATE(xtarget);
             TO_COORDINATE(ytarget);
+            next_direction = (((uint16_t)xtarget & 0xff)<<8) | ((uint16_t)ytarget & 0xff);
     };
 
     //move sphero to track it
@@ -118,9 +122,11 @@ void SpheroController::controller_loop()
     //sphero->setSpeedX(0x00ff);
     while(run.load())
     {
+        sem_wait(&next_pos);
+        if(!run.load()) break;
         getRandom();
         SPHERO_SET_COLOR(rgb);
-        while(abs(((int)x.load()) - xtarget) > 10 || abs(((int)y.load()) - ytarget) > 10)
+        while((abs(((int)x.load()) - xtarget) > 10 || abs(((int)y.load()) - ytarget) > 10) && run.load())
         {
             xpos = ((double)xtarget)-x.load();
             ypos = ((double)ytarget)-y.load();
@@ -136,7 +142,8 @@ void SpheroController::controller_loop()
             sphero->roll(0x2f, (uint16_t)angle);
         }
         sphero->roll(0,0);
-        sleep(5);
+        emit position_reached();
+        sleep(3);
     }
 }
 

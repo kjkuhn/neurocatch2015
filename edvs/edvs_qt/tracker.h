@@ -29,10 +29,13 @@ public:
 
     void add_to_wl(uint8_t *buf, size_t rows=128, size_t cols=128);
     void getKeyPoints(std::vector<cv::KeyPoint>&);
+    neurocatch::SpheroController *sphero;
+
 
 signals:
     void sendFrame(QImage *img);
     void send_info(const char *str);
+
 
 private:
     cv::Ptr<cv::ORB> orb;
@@ -43,8 +46,7 @@ private:
     std::atomic<bool> run, object_present;
     std::deque<cv::Mat> descriptors;
     std::deque<std::vector<cv::KeyPoint>> keypoints;
-    std::deque<uint8_t*> images;
-    neurocatch::SpheroController *sphero;
+    std::deque<uint8_t*> images; 
 
 
 

@@ -281,7 +281,8 @@ void Tracker::calculate(uint8_t *raw_img)
 #if USE_SPHERO
             sphero->setXY(max_dist, min_dist);
 #endif /*USE_SPHERO*/
-            sprintf(str_info, "xdirection: %f\tydirection: %f\n", max_dist, min_dist);
+            sprintf(str_info, "xdirection: %f\tydirection: %f\n\nnext: %hhu | %hhu",
+                    max_dist, min_dist, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
             emit send_info(str_info);
 #if DEBUG
             qimg = QImage(128,128, QImage::Format_RGB32);

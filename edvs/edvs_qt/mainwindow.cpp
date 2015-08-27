@@ -56,6 +56,12 @@ MainWindow::MainWindow(QWidget *parent) :
     _file = fopen(OFFLINE_FILE,"r");
     ui->recCtrl->hide();
 #endif /*ONLINE*/
+#if USE_SPHERO
+    connect(ui->sCtrl, SIGNAL(clicked()), this, SLOT(spheroButtonClicked()));
+    connect(tracker->sphero, &neurocatch::SpheroController::position_reached, this, &MainWindow::spheroPositionReached);
+#else
+    ui->sCtrl->hide();
+#endif /*USE_SPHERO*/
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));
     timer->start(UPDATE_INTERVAL);
@@ -142,4 +148,17 @@ void MainWindow::recButtonClicked()
 {
     ui->recCtrl->setText(__capture ? "Start" : "Stop");
     __capture = !__capture;
+}
+
+
+void MainWindow::spheroButtonClicked()
+{
+    tracker->sphero->signal_next_pos();
+    ui->sCtrl->setDisabled(true);
+}
+
+
+void MainWindow::spheroPositionReached()
+{
+    ui->sCtrl->setDisabled(false);
 }
