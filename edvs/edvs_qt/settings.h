@@ -18,7 +18,7 @@
 /*---Tracker---*/
 #define T_WINDOW_NAME               "tracker window"
 #define T_NUM_OBJ_DESC              5
-#define T_MIN_MATCHES               7
+#define T_MIN_MATCHES               5
 
 
 
@@ -37,6 +37,7 @@
 
 /*---Sphero---*/
 #define SPHERO_MAC                  "00:06:66:44:64:F7"
+#define SPHERO_SETUP_SPEED          0x2f
 
 
 

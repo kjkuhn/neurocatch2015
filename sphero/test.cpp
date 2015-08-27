@@ -11,10 +11,26 @@
 #define PI 				3.14159265359
 #define DEG(a) 				(a * 180.0 / PI)
 #define RANDOM_FILE			"/dev/random"
+
+
 Sphero *s;
 
 
-
+void random_t()
+{
+	FILE *f;
+	int i;
+	double d;
+	f = fopen(RANDOM_FILE, "rb");
+	printf("file opened\n");
+	fread(&i, 4,1,f);
+	printf("int read\n");
+	fread(&d,4,1,f);
+	printf("double read\n");
+	fclose(f);
+	printf("file closed\n");
+	printf("int: %d\tdouble: %d\n", i, (int)d);
+}
 
 
 int main(int argc, char** argv)
@@ -37,6 +53,6 @@ int main(int argc, char** argv)
 		DEG(atan2(-13.0, -20.0)), DEG(atan2(-13.0,20.0)),
 		DEG(atan2(13.0,20.0)), DEG(atan2(13.0,-20.0)));
 //	getc(stdin);
-	
+	random_t();
 	return 0;
 }
