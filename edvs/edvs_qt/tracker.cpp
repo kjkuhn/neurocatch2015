@@ -41,7 +41,7 @@ Tracker::Tracker()
 #if USE_ORB
     orb = cv::ORB::create(500, 2, 8, ORB_THRESHOLD, 0,4,cv::ORB::FAST_SCORE, 2, 20);
 #elif USE_SIFT
-    sift = cv::xfeatures2d::SIFT::create();
+    sift = cv::xfeatures2d::SIFT::create(100);
 #elif USE_SURF
     surf = cv::xfeatures2d::SURF::create();
 #elif USE_BRIEF_ONLY
@@ -156,11 +156,14 @@ void Tracker::calculate(uint8_t *raw_img)
 #endif /*DEBUG*/
 #if USE_SPHERO
     if(max > 100)
+    {
         sphero->setXY((double)j, (double)i);
-    sprintf(str_info, "xdirection: %d\tydirection: %d\n\nnext: %hhu | %hhu",
+        sprintf(str_info, "xdirection: %d\tydirection: %d\n\nnext: %hhu | %hhu",
             j, i, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
+    }
 #else
-    sprintf(str_info, "xdirection: %d\tydirection: %d", j, i);
+    if(max > 100)
+        sprintf(str_info, "xdirection: %d\tydirection: %d", j, i);
 #endif /*USE_SPHERO*/
 
     emit send_info(str_info);
