@@ -6,6 +6,7 @@
 #include "opencv2/videoio.hpp"
 #include "opencv2/opencv.hpp"
 #include "opencv2/core.hpp"
+#include "opencv2/xfeatures2d.hpp"
 #include "vector"
 #include "queue"
 #include "deque"
@@ -38,7 +39,14 @@ signals:
 
 
 private:
+#if USE_ORB
     cv::Ptr<cv::ORB> orb;
+#elif USE_SIFT
+    cv::Ptr<cv::xfeatures2d::SIFT> sift;
+#elif USE_SURF
+    cv::Ptr<cv::xfeatures2d::SURF> surf;
+#endif
+
     std::thread worker;
     std::queue<uint8_t*> wl;     //working list
     sem_t wl_count;

@@ -5,8 +5,8 @@
 #define DEBUG                       1
 #define DISPLAY_ONLY                0
 #define SLIDING_FRAMES              0
-#define ONLINE                      1
-#define USE_SPHERO                  1
+#define ONLINE                      0
+#define USE_SPHERO                  0
 
 
 
@@ -19,6 +19,9 @@
 #define T_WINDOW_NAME               "tracker window"
 #define T_NUM_OBJ_DESC              5
 #define T_MIN_MATCHES               5
+#define USE_ORB                     0
+#define USE_SIFT                    1
+#define USE_SURF                    0
 
 
 
@@ -48,6 +51,15 @@
 
 #if FRAME_OVERLAPPING >= UPDATE_INTERVAL
 #error FRAME_OVERLAPPING must be less than UPDATE_INTERVAL
+#endif
+
+
+#if (USE_ORB && USE_SIFT) || (USE_ORB && USE_SURF) || (USE_SIFT && USE_SURF)
+#error only one kp-algortihm may be active
+#endif
+
+#if !USE_ORB && !USE_SIFT && !USE_SURF
+#error please select a kp-algorithm
 #endif
 
 #endif // SETTINGS

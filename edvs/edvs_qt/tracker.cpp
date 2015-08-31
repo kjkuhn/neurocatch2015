@@ -37,7 +37,13 @@ uint32_t img_count;
 
 Tracker::Tracker()
 {
-    this->orb = cv::ORB::create(500, 2, 8, 2, 0,4,cv::ORB::FAST_SCORE, 2, 20);
+#if USE_ORB
+    orb = cv::ORB::create(500, 2, 8, 2, 0,4,cv::ORB::FAST_SCORE, 2, 20);
+#elif USE_SIFT
+    sift = cv::xfeatures2d::SIFT::create();
+#elif USE_SURF
+    surf = cv::xfeatures2d::SURF::create();
+#endif
     run.store(true);
     object_present.store(false);
     //error checking?
@@ -104,7 +110,13 @@ void Tracker::calculate(uint8_t *raw_img)
     cv::Mat img, desc, unfiltered;
     std::vector<cv::KeyPoint> kp;
     cv::Ptr<cv::DescriptorMatcher> matcher;
+#if USE_ORB
     matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+#elif USE_SURF
+    matcher = cv::DescriptorMatcher::create("FlannBased");
+#elif USE_SIFT
+    matcher = cv::DescriptorMatcher::create("BruteForce");
+#endif
     std::vector<cv::DMatch>matches, good_matches;
     unsigned int it, i;
     double max_dist, min_dist;
@@ -112,8 +124,16 @@ void Tracker::calculate(uint8_t *raw_img)
 
     unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
     cv::blur(unfiltered, img, cv::Size(5,5));
+#if USE_ORB
     orb.get()->detect(img, kp);
     orb.get()->compute(img, kp, desc);
+#elif USE_SIFT
+    sift.get()->detect(img, kp);
+    sift.get()->compute(img, kp, desc);
+#elif USE_SURF
+    surf.get()->detect(img, kp);
+    surf.get()->compute(img, kp, desc);
+#endif
     if(descriptors.size() < T_NUM_OBJ_DESC)
     {
         images.push_back(raw_img);
@@ -280,9 +300,13 @@ void Tracker::calculate(uint8_t *raw_img)
             min_dist /= (double)i > 0 ? i : 1;
 #if USE_SPHERO
             sphero->setXY(max_dist, min_dist);
-#endif /*USE_SPHERO*/
             sprintf(str_info, "xdirection: %f\tydirection: %f\n\nnext: %hhu | %hhu",
                     max_dist, min_dist, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
+#else
+            sprintf(str_info, "xdirection: %f\tydirection: %f",
+                    max_dist, min_dist);
+#endif /*USE_SPHERO*/
+
             emit send_info(str_info);
 #if DEBUG
             qimg = QImage(128,128, QImage::Format_RGB32);
