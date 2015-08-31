@@ -5,6 +5,7 @@
 #include "stdint.h"
 #include "opencv2/highgui.hpp"
 #include "qimage.h"
+#include "time.h"
 
 
 
@@ -38,7 +39,7 @@ uint32_t img_count;
 Tracker::Tracker()
 {
 #if USE_ORB
-    orb = cv::ORB::create(500, 2, 8, 2, 0,4,cv::ORB::FAST_SCORE, 2, 20);
+    orb = cv::ORB::create(500, 2, 8, ORB_THRESHOLD, 0,4,cv::ORB::FAST_SCORE, 2, 20);
 #elif USE_SIFT
     sift = cv::xfeatures2d::SIFT::create();
 #elif USE_SURF
@@ -110,12 +111,16 @@ void Tracker::calculate(uint8_t *raw_img)
     cv::Mat img, desc, unfiltered;
     std::vector<cv::KeyPoint> kp;
     cv::Ptr<cv::DescriptorMatcher> matcher;
+#if MEASURE_TIME
+    struct timespec _tstart, _tstop;
+    FILE *_tfile;
+#endif /*MEASURE_TIME*/
 #if USE_ORB
-    matcher = cv::DescriptorMatcher::create("BruteForce-Hamming");
+    matcher = cv::DescriptorMatcher::create(MATCHER_ORB);
 #elif USE_SURF
-    matcher = cv::DescriptorMatcher::create("FlannBased");
+    matcher = cv::DescriptorMatcher::create(MATCHER_SURF);
 #elif USE_SIFT
-    matcher = cv::DescriptorMatcher::create("BruteForce");
+    matcher = cv::DescriptorMatcher::create(MATCHER_SIFT);
 #endif
     std::vector<cv::DMatch>matches, good_matches;
     unsigned int it, i;
@@ -124,6 +129,9 @@ void Tracker::calculate(uint8_t *raw_img)
 
     unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
     cv::blur(unfiltered, img, cv::Size(5,5));
+#if MEASURE_TIME
+    clock_gettime(CLOCK_REALTIME, &_tstart);
+#endif /*MEASURE_TIME*/
 #if USE_ORB
     orb.get()->detect(img, kp);
     orb.get()->compute(img, kp, desc);
@@ -134,6 +142,17 @@ void Tracker::calculate(uint8_t *raw_img)
     surf.get()->detect(img, kp);
     surf.get()->compute(img, kp, desc);
 #endif
+#if MEASURE_TIME
+    clock_gettime(CLOCK_REALTIME, &_tstop);
+    _tstart.tv_sec = _tstop.tv_sec - _tstart.tv_sec;
+    _tstart.tv_nsec = _tstop.tv_nsec - _tstart.tv_nsec;
+    _tfile = fopen(MEASURE_TIME_OF, "ab");
+    if(_tfile != NULL)
+    {
+        fwrite(&_tstart, sizeof(_tstart), 1, _tfile);
+        fclose(_tfile);
+    }
+#endif /*MEASURE_TIME*/
     if(descriptors.size() < T_NUM_OBJ_DESC)
     {
         images.push_back(raw_img);

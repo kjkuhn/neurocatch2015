@@ -4,6 +4,7 @@
 #include "stdint.h"
 
 
+
 #define SPHERO_SET_COLOR(a) sphero->setColor((uint8_t)((a >> 16) & 0xff), (uint8_t)((a >> 8)& 0xff), (uint8_t)(a & 0xff))
 #ifndef PI
 #define PI 3.14159265

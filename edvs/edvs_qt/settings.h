@@ -19,10 +19,32 @@
 #define T_WINDOW_NAME               "tracker window"
 #define T_NUM_OBJ_DESC              5
 #define T_MIN_MATCHES               5
-#define USE_ORB                     0
-#define USE_SIFT                    1
+#define USE_ORB                     1
+#define USE_SIFT                    0
 #define USE_SURF                    0
+#define MEASURE_TIME                0
 
+#define ORB_THRESHOLD               31
+
+/*
+ * Possible matcher types (see opencv-doc):
+ *   BruteForce (it uses L2 )
+ *   BruteForce-L1
+ *   BruteForce-Hamming
+ *   BruteForce-Hamming(2)
+ *   FlannBased
+*/
+#define MATCHER_SIFT                "BruteForce"
+#define MATCHER_SURF                "FlannBased"
+#define MATCHER_ORB                 "BruteForce-Hamming"
+
+#if USE_ORB
+#define MEASURE_TIME_OF             "orb_time.dat"
+#elif USE_SIFT
+#define MEASURE_TIME_OF             "sift_time.dat"
+#elif USE_SURF
+#define MEASURE_TIME_OF             "surf_time.dat"
+#endif
 
 
 /*---MainWindow---*/
@@ -32,7 +54,7 @@
 
 
 /*---Frame Config---*/
-#define UPDATE_INTERVAL             20
+#define UPDATE_INTERVAL             10
 #define DATA_LEN                    128*128
 #define FRAME_OVERLAPPING           10
 
@@ -49,7 +71,7 @@
 #define DEBUG                       0
 #endif
 
-#if FRAME_OVERLAPPING >= UPDATE_INTERVAL
+#if FRAME_OVERLAPPING >= UPDATE_INTERVAL && SLIDING_FRAMES
 #error FRAME_OVERLAPPING must be less than UPDATE_INTERVAL
 #endif
 
