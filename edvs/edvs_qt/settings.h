@@ -5,8 +5,8 @@
 #define DEBUG                       1
 #define DISPLAY_ONLY                0
 #define SLIDING_FRAMES              0
-#define ONLINE                      0
-#define USE_SPHERO                  0
+#define ONLINE                      1
+#define USE_SPHERO                  1
 
 
 
@@ -19,12 +19,16 @@
 #define T_WINDOW_NAME               "tracker window"
 #define T_NUM_OBJ_DESC              5
 #define T_MIN_MATCHES               5
-#define USE_ORB                     1
+#define USE_ORB                     0
 #define USE_SIFT                    0
-#define USE_SURF                    0
+#define USE_SURF                    1
+#define USE_BRIEF_ONLY              0
 #define MEASURE_TIME                0
+#define FILTER_IMAGE                0
+#define USE_WEIGHTS                 1
 
-#define ORB_THRESHOLD               31
+#define ORB_THRESHOLD               23                  /*default: 31*/
+#define BRIEF_DESCRIPTOR_LENGTH     16                  /*16/32/64*/
 
 /*
  * Possible matcher types (see opencv-doc):
@@ -37,6 +41,7 @@
 #define MATCHER_SIFT                "BruteForce"
 #define MATCHER_SURF                "FlannBased"
 #define MATCHER_ORB                 "BruteForce-Hamming"
+#define MATCHER_BRIEF               "BruteForce"
 
 #if USE_ORB
 #define MEASURE_TIME_OF             "orb_time.dat"
@@ -44,7 +49,14 @@
 #define MEASURE_TIME_OF             "sift_time.dat"
 #elif USE_SURF
 #define MEASURE_TIME_OF             "surf_time.dat"
+#else
+#define MEASURE_TIME_OF             "default_time.dat"
 #endif
+
+#if USE_BRIEF_ONLY
+#undef FILTER_IMAGE
+#define FILTER_IMAGE                1
+#endif /*USE_BRIEF_ONLY*/
 
 
 /*---MainWindow---*/
@@ -54,7 +66,7 @@
 
 
 /*---Frame Config---*/
-#define UPDATE_INTERVAL             10
+#define UPDATE_INTERVAL             20
 #define DATA_LEN                    128*128
 #define FRAME_OVERLAPPING           10
 
@@ -80,7 +92,7 @@
 #error only one kp-algortihm may be active
 #endif
 
-#if !USE_ORB && !USE_SIFT && !USE_SURF
+#if !USE_ORB && !USE_SIFT && !USE_SURF && !USE_BRIEF_ONLY
 #error please select a kp-algorithm
 #endif
 

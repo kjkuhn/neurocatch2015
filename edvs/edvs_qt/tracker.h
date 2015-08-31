@@ -45,6 +45,8 @@ private:
     cv::Ptr<cv::xfeatures2d::SIFT> sift;
 #elif USE_SURF
     cv::Ptr<cv::xfeatures2d::SURF> surf;
+#elif USE_BRIEF_ONLY
+    cv::Ptr<cv::xfeatures2d::BriefDescriptorExtractor> brief;
 #endif
 
     std::thread worker;

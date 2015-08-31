@@ -44,6 +44,8 @@ Tracker::Tracker()
     sift = cv::xfeatures2d::SIFT::create();
 #elif USE_SURF
     surf = cv::xfeatures2d::SURF::create();
+#elif USE_BRIEF_ONLY
+    brief = cv::xfeatures2d::BriefDescriptorExtractor::create(BRIEF_DESCRIPTOR_LENGTH);
 #endif
     run.store(true);
     object_present.store(false);
@@ -106,6 +108,68 @@ void Tracker::process()
 }
 
 
+#if USE_WEIGHTS
+
+void Tracker::calculate(uint8_t *raw_img)
+{
+    int x,y,i,j, pos, max, max_pos;
+    cv::Mat img, unfiltered;
+    int sum[DATA_LEN];
+    max = 0;
+//#if FILTER_IMAGE
+    unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
+    cv::blur(unfiltered, img, cv::Size(5,5));
+//#else
+//    img = cv::Mat(128,128,CV_8UC1, raw_img);
+//#endif /*FILTER_IMAGE*/
+    for(y = 0; y < 128; y++)
+    {
+        for(x = 0; x < 128; x++)
+        {
+            pos = y*128+x;
+            sum[pos] = -(int)img.at<uint8_t>(y,x);
+            for(i = y-3 < 0? 0:y-3; i < y+3 && i < 128; i++)
+                for(j = x-3 < 0? 0:x-3; j < x+3 && j < 128; j++)
+                    sum[pos] = (int)img.at<uint8_t>(i,j);
+            if(sum[pos] > max)
+            {
+                max = sum[pos];
+                max_pos = pos;
+            }
+        }
+    }
+    free(raw_img);
+#if DEBUG
+    i = max_pos/128;    //y
+    j = max_pos%128;    //x
+    qimg = QImage(128,128, QImage::Format_RGB32);
+    for(x = 0; x < 128; x++)
+        for(y = 0; y < 128;y++)
+        {
+            if(x >= j-3 && x <= j+3 && y >= i-3 && y <= i+3 && max > 100)
+                qimg.setPixel(x,y,qRgb(255,255,0));
+            else
+                qimg.setPixel(x,y,0);
+        }
+    emit sendFrame(&qimg);
+
+#endif /*DEBUG*/
+#if USE_SPHERO
+    if(max > 100)
+        sphero->setXY((double)j, (double)i);
+    sprintf(str_info, "xdirection: %d\tydirection: %d\n\nnext: %hhu | %hhu",
+            j, i, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
+#else
+    sprintf(str_info, "xdirection: %d\tydirection: %d", j, i);
+#endif /*USE_SPHERO*/
+
+    emit send_info(str_info);
+}
+
+
+#else
+
+
 void Tracker::calculate(uint8_t *raw_img)
 {
     cv::Mat img, desc, unfiltered;
@@ -121,14 +185,20 @@ void Tracker::calculate(uint8_t *raw_img)
     matcher = cv::DescriptorMatcher::create(MATCHER_SURF);
 #elif USE_SIFT
     matcher = cv::DescriptorMatcher::create(MATCHER_SIFT);
+#elif USE_BRIEF_ONLY
+    matcher = cv::DescriptorMatcher::create(MATCHER_BRIEF);
 #endif
     std::vector<cv::DMatch>matches, good_matches;
     unsigned int it, i;
     double max_dist, min_dist;
     std::vector<cv::KeyPoint> good_old, good_new;
 
+#if FILTER_IMAGE
     unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
     cv::blur(unfiltered, img, cv::Size(5,5));
+#else
+    img = cv::Mat(128,128,CV_8UC1, raw_img);
+#endif /*FILTER_IMAGE*/
 #if MEASURE_TIME
     clock_gettime(CLOCK_REALTIME, &_tstart);
 #endif /*MEASURE_TIME*/
@@ -141,6 +211,16 @@ void Tracker::calculate(uint8_t *raw_img)
 #elif USE_SURF
     surf.get()->detect(img, kp);
     surf.get()->compute(img, kp, desc);
+#elif USE_BRIEF_ONLY
+    for(it = 0; (int)it < img.rows; it++)
+    {
+        for(i = 0; (int)i < img.cols; i++)
+        {
+            if(img.at<uint8_t>(it, i) >= 64)
+                kp.push_back(cv::KeyPoint((float)i, (float)it, 1));
+        }
+    }
+    brief.get()->compute(img, kp, desc);
 #endif
 #if MEASURE_TIME
     clock_gettime(CLOCK_REALTIME, &_tstop);
@@ -340,6 +420,8 @@ void Tracker::calculate(uint8_t *raw_img)
         free(raw_img);
     }
 }
+
+#endif /*USE_WEIGHTS*/
 
 
 } /*neurocatch*/
