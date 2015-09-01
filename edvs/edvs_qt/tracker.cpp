@@ -193,7 +193,7 @@ void Tracker::calculate(uint8_t *raw_img)
 #endif
     std::vector<cv::DMatch>matches, good_matches;
     unsigned int it, i;
-    double max_dist, min_dist;
+    double max_dist, min_dist, avg_x, avg_y;
     std::vector<cv::KeyPoint> good_old, good_new;
 
 #if FILTER_IMAGE
@@ -286,6 +286,10 @@ void Tracker::calculate(uint8_t *raw_img)
                 {
                     good_new.push_back(kp[matches[i].queryIdx]);
                     good_old.push_back(keypoints[it][matches[i].trainIdx]);
+/*#if USE_DYNAMIC_ORB
+                    avg_x += good_new[x].pt.x;
+                    avg_y += good_new[x].pt.y;
+#endif /*USE_DYNAMIC_ORB*/
                 }
             }
             if(matches.size() < T_MIN_MATCHES || good_new.size() < T_MIN_GOOD_MATCHES)

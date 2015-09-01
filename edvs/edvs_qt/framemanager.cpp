@@ -3,8 +3,8 @@
 #include "string.h"
 #include "time.h"
 
-#define BB_SIZE         16
-#define BB_THRESHOLD    10
+#define BB_SIZE         32
+#define BB_THRESHOLD    5
 #define WAITING_SEMA    0
 
 
@@ -122,6 +122,9 @@ void FrameManager::manage()
         emit update_img(&qimg);
         if(sem_result == 0)
             tracker->add_to_wl(buffer[num]);
+        FILE *f = fopen("data.dat", "ab");
+        fwrite(buffer[num],1, DATA_LEN, f);
+        fclose(f);
         memset(buffer[num], 0, DATA_LEN);
         if(tracker->static_frame())
             usleep(time_to_sleep);
