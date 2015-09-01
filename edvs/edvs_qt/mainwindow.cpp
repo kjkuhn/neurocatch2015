@@ -34,7 +34,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(tracker, &neurocatch::Tracker::send_info, this, &MainWindow::update_info);
 #if SLIDING_FRAMES
     frame_mgr = new neurocatch::FrameManager();
-#endif /*SLIDING_FRAMES*/
+#elif USE_DYNAMIC_ORB
+    frame_mgr = new neurocatch::FrameManager(tracker);
+    connect(frame_mgr, &neurocatch::FrameManager::update_img, this, &MainWindow::update_img);
+#endif /*SLIDING_FRAMES/USE_DYNAMIC_ORB*/
 #endif /*!DISPLAY_ONLY*/
     __capture = false;
 #if !DEBUG  ||  DISPLAY_ONLY
@@ -62,9 +65,11 @@ MainWindow::MainWindow(QWidget *parent) :
 #else
     ui->sCtrl->hide();
 #endif /*USE_SPHERO*/
+#if !USE_DYNAMIC_ORB
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));
     timer->start(UPDATE_INTERVAL);
+#endif /*!USE_DYNAMIC_ORB*/
     ui->time->hide();
 }
 
@@ -77,10 +82,12 @@ MainWindow::~MainWindow()
 void MainWindow::OnEvent(const std::vector<Edvs::Event>& events)
 {
     for(std::vector<Edvs::Event>::const_iterator it=events.begin(); it!=events.end(); it++) {
-#if !SLIDING_FRAMES
-       active[it->y*128+it->x] += 1;
-#else
+#if SLIDING_FRAMES
        frame_mgr->push_evt(it->y*128+it->x);
+#elif USE_DYNAMIC_ORB
+        frame_mgr->push_evt(it->y*128+it->x, it->parity);
+#else
+        active[it->y*128+it->x] += (*it).parity ? 1 : -1;
 #endif /*!SLIDING_FRAMES*/
     }
 }
@@ -115,8 +122,13 @@ void MainWindow::update_timer()
 #endif /*!SLIDING_FRAMES*/
     for(i = 0; i < DATA_LEN; i++)
     {
-        dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
-        img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
+        if((char)dat[i] < 0)
+            dat[i] = 100;
+        else if((char)dat[i] > 0)
+            dat[i] = 250;
+        img.setPixel(i % 128, i / 128, qRgb(dat[i]==100?255:0, dat[i]==250?255:0, 0));
+        //dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
+        //img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
     }
     if(__capture)
     {
@@ -131,8 +143,14 @@ void MainWindow::update_timer()
     fread(dat, 1, DATA_LEN, _file);
     for(i = 0; i < DATA_LEN; i++)
     {
-        dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
-        img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
+        if(dat[i] < 0)
+            dat[i] = 100;
+        else if(dat[i] > 0)
+            dat[i] = 250;
+        img.setPixel(i % 128, i / 128, qRgb(dat[i]==100?255:0, dat[i]==250?255:0, 0));
+
+        //dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
+        //img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
     }
 #endif /*ONLINE*/
 
@@ -162,4 +180,10 @@ void MainWindow::spheroButtonClicked()
 void MainWindow::spheroPositionReached()
 {
     ui->sCtrl->setDisabled(false);
+}
+
+
+void MainWindow::update_img(QImage *img)
+{
+    ui->label->setPixmap(QPixmap::fromImage(img->scaled(ui->label->width(), ui->label->height())));
 }

@@ -31,7 +31,8 @@ public:
     void add_to_wl(uint8_t *buf, size_t rows=128, size_t cols=128);
     void getKeyPoints(std::vector<cv::KeyPoint>&);
     neurocatch::SpheroController *sphero;
-
+    bool static_frame(){return !object_present;}
+    int getTrackingPoint(){return tracking_point;}
 
 signals:
     void sendFrame(QImage *img);
@@ -39,7 +40,7 @@ signals:
 
 
 private:
-#if USE_ORB
+#if USE_ORB || USE_DYNAMIC_ORB
     cv::Ptr<cv::ORB> orb;
 #elif USE_SIFT
     cv::Ptr<cv::xfeatures2d::SIFT> sift;
@@ -47,7 +48,7 @@ private:
     cv::Ptr<cv::xfeatures2d::SURF> surf;
 #elif USE_BRIEF_ONLY
     cv::Ptr<cv::xfeatures2d::BriefDescriptorExtractor> brief;
-#endif
+#endif /*ALGORITHM*/
 
     std::thread worker;
     std::queue<uint8_t*> wl;     //working list
@@ -57,7 +58,7 @@ private:
     std::deque<cv::Mat> descriptors;
     std::deque<std::vector<cv::KeyPoint>> keypoints;
     std::deque<uint8_t*> images; 
-
+    std::atomic<int> tracking_point;
 
 
     void process();

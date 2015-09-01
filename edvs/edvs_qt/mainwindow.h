@@ -33,6 +33,7 @@ public slots:
     void update_info(const char *str);
     void spheroButtonClicked();
     void spheroPositionReached();
+    void update_img(QImage *img);
 
 private:
     Ui::MainWindow *ui;

@@ -38,7 +38,7 @@ uint32_t img_count;
 
 Tracker::Tracker()
 {
-#if USE_ORB
+#if USE_ORB || USE_DYNAMIC_ORB
     orb = cv::ORB::create(500, 2, 8, ORB_THRESHOLD, 0,4,cv::ORB::FAST_SCORE, 2, 20);
 #elif USE_SIFT
     sift = cv::xfeatures2d::SIFT::create(100);
@@ -182,7 +182,7 @@ void Tracker::calculate(uint8_t *raw_img)
     struct timespec _tstart, _tstop;
     FILE *_tfile;
 #endif /*MEASURE_TIME*/
-#if USE_ORB
+#if USE_ORB || USE_DYNAMIC_ORB
     matcher = cv::DescriptorMatcher::create(MATCHER_ORB);
 #elif USE_SURF
     matcher = cv::DescriptorMatcher::create(MATCHER_SURF);
@@ -205,7 +205,7 @@ void Tracker::calculate(uint8_t *raw_img)
 #if MEASURE_TIME
     clock_gettime(CLOCK_REALTIME, &_tstart);
 #endif /*MEASURE_TIME*/
-#if USE_ORB
+#if USE_ORB || USE_DYNAMIC_ORB
     orb.get()->detect(img, kp);
     orb.get()->compute(img, kp, desc);
 #elif USE_SIFT
@@ -224,7 +224,7 @@ void Tracker::calculate(uint8_t *raw_img)
         }
     }
     brief.get()->compute(img, kp, desc);
-#endif
+#endif /*ALGORITHM*/
 #if MEASURE_TIME
     clock_gettime(CLOCK_REALTIME, &_tstop);
     _tstart.tv_sec = _tstop.tv_sec - _tstart.tv_sec;
@@ -236,6 +236,7 @@ void Tracker::calculate(uint8_t *raw_img)
         fclose(_tfile);
     }
 #endif /*MEASURE_TIME*/
+
     if(descriptors.size() < T_NUM_OBJ_DESC)
     {
         images.push_back(raw_img);
@@ -257,7 +258,7 @@ void Tracker::calculate(uint8_t *raw_img)
             sprintf(str_info, "#keypoints:\t%lu\n#descriptors:\t%d\n#matches:\t%lu\n#images:\t%u",
                     kp.size(), desc.rows, matches.size(), img_count);
             emit send_info((const char*)str_info);
-            if(matches.size() < T_MIN_MATCHES)
+/*            if(matches.size() < T_MIN_MATCHES)
             {
                 //no object ?
                 while(!images.empty())
@@ -269,7 +270,7 @@ void Tracker::calculate(uint8_t *raw_img)
                 descriptors.clear();
                 break;
             }
-
+*/
             max_dist = 0;
             min_dist = 100;
             //get min/max distance
@@ -287,25 +288,18 @@ void Tracker::calculate(uint8_t *raw_img)
                     good_old.push_back(keypoints[it][matches[i].trainIdx]);
                 }
             }
-/*
-#if DEBUG
-            cv::Mat img2(128,128,CV_8UC1, images[it]);
-            cv::Mat outImg;
-            try
+            if(matches.size() < T_MIN_MATCHES || good_new.size() < T_MIN_GOOD_MATCHES)
             {
-            cv::drawMatches(img, kp, img2, keypoints[it], matches, outImg);
-            qimg = QImage(outImg.cols, outImg.rows, QImage::Format_RGB32);
-            for(int y = 0; y < outImg.rows; y++)
-                for(int x = 0; x < outImg.cols; x++)
-                    qimg.setPixel(x,y, qRgb(outImg.at<uint8_t>(y,x),outImg.at<uint8_t>(y,x),outImg.at<uint8_t>(y,x)));
-            emit sendFrame(&qimg);
+                //no object ?
+                while(!images.empty())
+                {
+                    free(images.front());
+                    images.pop_front();
+                }
+                keypoints.clear();
+                descriptors.clear();
+                break;
             }
-            catch(int err)
-            {
-
-            }
-#endif
-*/
 
 #if DEBUG
 
@@ -336,6 +330,8 @@ void Tracker::calculate(uint8_t *raw_img)
             orb.get()->compute(cv::Mat(128,128,CV_8UC1, images[it]), keypoints[it], desc);
             descriptors[it] = desc;
 */
+            //TODO: change to random kp
+            tracking_point = good_new[0].pt.x + good_new[0].pt.y * 128;
             good_new.clear();
             good_old.clear();
             matches.clear();
@@ -372,13 +368,13 @@ void Tracker::calculate(uint8_t *raw_img)
             if(matches.size() >= T_MIN_MATCHES)
                 break;
         }
-        if(matches.size() >= T_MIN_MATCHES)
-        {
+        //if(matches.size() >= T_MIN_MATCHES)
+        //{
             //object present??
             max_dist = 0;
             min_dist = 100;
             //get min/max distance
-            for(i = 0; i < (unsigned int)descriptors[it].rows; i++)
+            for(i = 0; i < (unsigned int)matches.size()/*descriptors[it].rows*/; i++)
             {
                 if(matches[i].distance < min_dist) min_dist = matches[i].distance;
                 if(matches[i].distance > max_dist) max_dist = matches[i].distance;
@@ -389,37 +385,41 @@ void Tracker::calculate(uint8_t *raw_img)
                 if(matches[i].distance <= 3 * min_dist)
                     good_matches.push_back(matches[i]);
             }
-            min_dist = 0;
-            max_dist = 0;
-            for(i = 0; i < (unsigned int)good_matches.size(); i++)
+            if(good_matches.size() >= T_MIN_GOOD_MATCHES)
             {
-                //if(kp[good_matches[i].queryIdx].pt.x != 0)
-                    max_dist += (double)(kp[good_matches[i].queryIdx].pt.x);
-                //if(kp[good_matches[i].queryIdx].pt.y != 0)
-                    min_dist += (double)(kp[good_matches[i].queryIdx].pt.y);
-            }
-            max_dist /= (double)i > 0 ? i : 1;
-            min_dist /= (double)i > 0 ? i : 1;
+                min_dist = 0;
+                max_dist = 0;
+                for(i = 0; i < (unsigned int)good_matches.size(); i++)
+                {
+                    //if(kp[good_matches[i].queryIdx].pt.x != 0)
+                        max_dist += (double)(kp[good_matches[i].queryIdx].pt.x);
+                    //if(kp[good_matches[i].queryIdx].pt.y != 0)
+                        min_dist += (double)(kp[good_matches[i].queryIdx].pt.y);
+                }
+                max_dist /= (double)i > 0 ? i : 1;
+                min_dist /= (double)i > 0 ? i : 1;
+                tracking_point = (int)max_dist + (int)(min_dist * 128.0);
 #if USE_SPHERO
-            sphero->setXY(max_dist, min_dist);
-            sprintf(str_info, "xdirection: %f\tydirection: %f\n\nnext: %hhu | %hhu",
-                    max_dist, min_dist, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
+                sphero->setXY(max_dist, min_dist);
+                sprintf(str_info, "xdirection: %f\tydirection: %f\n\nnext: %hhu | %hhu",
+                        max_dist, min_dist, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
 #else
-            sprintf(str_info, "xdirection: %f\tydirection: %f",
-                    max_dist, min_dist);
+                sprintf(str_info, "xdirection: %f\tydirection: %f\n#images: %u",
+                        max_dist, min_dist, img_count);
 #endif /*USE_SPHERO*/
 
-            emit send_info(str_info);
+                emit send_info(str_info);
 #if DEBUG
-            qimg = QImage(128,128, QImage::Format_RGB32);
-            for(int x = 0; x < 128; x++)
-                for(int y = 0; y < 128;y++)
-                    qimg.setPixel(x,y,0);
-            for(i = 0; i < (unsigned int)good_matches.size(); i++)
-                qimg.setPixel(kp[good_matches[i].queryIdx].pt.x, kp[good_matches[i].queryIdx].pt.y, qRgb(217,100,50));
-            emit sendFrame(&qimg);
+                qimg = QImage(128,128, QImage::Format_RGB32);
+                for(int x = 0; x < 128; x++)
+                    for(int y = 0; y < 128;y++)
+                        qimg.setPixel(x,y,0);
+                for(i = 0; i < (unsigned int)good_matches.size(); i++)
+                    qimg.setPixel(kp[good_matches[i].queryIdx].pt.x, kp[good_matches[i].queryIdx].pt.y, qRgb(217,100,50));
+                emit sendFrame(&qimg);
 #endif /*DEBUG*/
-        }
+            }
+        //}
         free(raw_img);
     }
 }

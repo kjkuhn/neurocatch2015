@@ -5,7 +5,7 @@
 #define DEBUG                       1
 #define DISPLAY_ONLY                0
 #define SLIDING_FRAMES              0
-#define ONLINE                      0
+#define ONLINE                      1
 #define USE_SPHERO                  0
 
 
@@ -16,19 +16,21 @@
 
 
 /*---Tracker---*/
-#define T_WINDOW_NAME               "tracker window"
 #define T_NUM_OBJ_DESC              5
-#define T_MIN_MATCHES               5
+#define T_MIN_MATCHES               10
+#define T_MIN_GOOD_MATCHES          5
 
 //Algorithms
 #define USE_ORB                     0
 #define USE_SIFT                    0
 #define USE_SURF                    0
-#define USE_BRIEF_ONLY              1
+#define USE_BRIEF_ONLY              0
 #define USE_WEIGHTS                 0
 
+#define USE_DYNAMIC_ORB             1
+
 #define MEASURE_TIME                0
-#define FILTER_IMAGE                0
+#define FILTER_IMAGE                1
 
 
 #define ORB_THRESHOLD               13                  /*default: 31*/
@@ -95,13 +97,21 @@
 #if (USE_ORB && USE_SIFT) || (USE_ORB && USE_SURF) || (USE_SIFT && USE_SURF) \
     || (USE_ORB && USE_BRIEF_ONLY) || (USE_SURF && USE_BRIEF_ONLY) || (USE_SIFT && USE_BRIEF_ONLY) \
     || (USE_ORB && USE_WEIGHTS) || (USE_SURF && USE_WEIGHTS) || (USE_SIFT && USE_WEIGHTS) \
-    || (USE_WEIGHTS && USE_BRIEF_ONLY)
+    || (USE_WEIGHTS && USE_BRIEF_ONLY) \
+    || (USE_DYNAMIC_ORB && USE_SIFT) || (USE_DYNAMIC_ORB && USE_SURF) || (USE_DYNAMIC_ORB && USE_ORB) \
+    || (USE_DYNAMIC_ORB && USE_WEIGHTS) || (USE_DYNAMIC_ORB && USE_BRIEF_ONLY)
 #error only one kp-algortihm may be active
 #endif
 
-#if !USE_ORB && !USE_SIFT && !USE_SURF && !USE_BRIEF_ONLY && !USE_WEIGHTS
+#if !USE_ORB && !USE_SIFT && !USE_SURF && !USE_BRIEF_ONLY && !USE_WEIGHTS && !USE_DYNAMIC_ORB
 #error please select a kp-algorithm
 #endif
+
+
+#if USE_DYNAMIC_ORB
+#undef T_NUM_OBJ_DESC
+#define T_NUM_OBJ_DESC              2
+#endif /*USE_DYNAMIC_ORB*/
 
 #endif // SETTINGS
 
