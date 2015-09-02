@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(tracker, &neurocatch::Tracker::send_info, this, &MainWindow::update_info);
 #if SLIDING_FRAMES
     frame_mgr = new neurocatch::FrameManager();
-#elif USE_DYNAMIC_ORB
+#elif USE_DYNAMIC_BB
     frame_mgr = new neurocatch::FrameManager(tracker);
     connect(frame_mgr, &neurocatch::FrameManager::update_img, this, &MainWindow::update_img);
 #endif /*SLIDING_FRAMES/USE_DYNAMIC_ORB*/
@@ -65,7 +65,7 @@ MainWindow::MainWindow(QWidget *parent) :
 #else
     ui->sCtrl->hide();
 #endif /*USE_SPHERO*/
-#if !USE_DYNAMIC_ORB
+#if !USE_DYNAMIC_BB
     timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(update_timer()));
     timer->start(UPDATE_INTERVAL);
@@ -78,18 +78,22 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+static FILE *raw_file;
 
 void MainWindow::OnEvent(const std::vector<Edvs::Event>& events)
 {
+    raw_file = fopen("raw_edvs.dat", "ab");
     for(std::vector<Edvs::Event>::const_iterator it=events.begin(); it!=events.end(); it++) {
 #if SLIDING_FRAMES
        frame_mgr->push_evt(it->y*128+it->x);
-#elif USE_DYNAMIC_ORB
+#elif USE_DYNAMIC_BB
         frame_mgr->push_evt(it->y*128+it->x, it->parity);
 #else
-        active[it->y*128+it->x] += (*it).parity ? 1 : -1;
+        active[it->y*128+it->x] += (*it).parity ? EDVS_ON_EVT : EDVS_OFF_EVT;
 #endif /*!SLIDING_FRAMES*/
+        fwrite(&(*it), sizeof(Edvs::Event), 1, raw_file);
     }
+    fclose(raw_file);
 }
 
 
@@ -150,7 +154,7 @@ void MainWindow::update_timer()
         img.setPixel(i % 128, i / 128, qRgb(dat[i]==100?255:0, dat[i]==250?255:0, 0));
 
         //dat[i] = dat[i] == 0 ? 0 : dat[i] + 200;
-        //img.setPixel(i % 128, i / 128, qRgb(dat[i], dat[i], dat[i]));
+        //img.setPixel(i % 128, i / 128, q20Rgb(dat[i], dat[i], dat[i]));
     }
 #endif /*ONLINE*/
 

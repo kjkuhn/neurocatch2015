@@ -27,7 +27,7 @@ public:
     FrameManager(Tracker *tracker = 0);
     ~FrameManager();
 
-#if !USE_DYNAMIC_ORB
+#if !USE_DYNAMIC_BB
     void push_evt(uint32_t evt);
     uint8_t* next();
 

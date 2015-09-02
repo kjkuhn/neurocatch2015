@@ -3,12 +3,12 @@
 #include "string.h"
 #include "time.h"
 
-#define BB_SIZE         32
-#define BB_THRESHOLD    5
-#define WAITING_SEMA    0
+#define BB_SIZE             16
+#define BB_THRESHOLD        20
+#define TIMED_SEMAPHORE     1
 
 
-#if USE_DYNAMIC_ORB
+#if USE_DYNAMIC_BB
 static const __useconds_t time_to_sleep = UPDATE_INTERVAL * 1000;
 static QImage qimg;
 #else
@@ -44,7 +44,7 @@ FrameManager::~FrameManager()
 }
 
 
-#if !USE_DYNAMIC_ORB
+#if !USE_DYNAMIC_BB
 void FrameManager::push_evt(uint32_t evt)
 {
     std::deque<uint8_t*>::iterator it;
@@ -98,6 +98,7 @@ void FrameManager::manage()
     uint8_t num = 0;
     int i, sem_result;
     struct timespec tspec;
+    FILE *f;
 
     sem_result = 0;
     tspec.tv_sec = 0;
@@ -119,18 +120,21 @@ void FrameManager::manage()
                 buffer[num][i] = 100;
             qimg.setPixel(i%128, i/128, qRgb(buffer[num][i] == 100 ? 255 : 0, buffer[num][i] == 250 ? 255 : 0, 0));
         }
+        qimg.setPixel(tracker->getTrackingPoint()/128, tracker->getTrackingPoint()%128, qRgb(0,255,255));
         emit update_img(&qimg);
-        if(sem_result == 0)
+        //if(sem_result == 0)
             tracker->add_to_wl(buffer[num]);
-        FILE *f = fopen("data.dat", "ab");
+        /*
+        f = fopen("data.dat", "ab");
         fwrite(buffer[num],1, DATA_LEN, f);
         fclose(f);
+        */
         memset(buffer[num], 0, DATA_LEN);
         if(tracker->static_frame())
             usleep(time_to_sleep);
         else
         {
-#if WAITING_SEMA
+#if TIMED_SEMAPHORE
             sem_result = sem_timedwait(&sema, &tspec);
 #else
             sem_wait(&sema);
@@ -143,9 +147,7 @@ void FrameManager::manage()
 void FrameManager::push_evt(uint32_t evt, bool parity)
 {
     int x1,x2,y1,y2;
-    mtx.lock();
-    active[evt] += parity ? 1 : -1;
-    mtx.unlock();
+
     if(!tracker->static_frame())
     {
         x1 = tracker->getTrackingPoint();
@@ -154,12 +156,23 @@ void FrameManager::push_evt(uint32_t evt, bool parity)
         x2 = evt % 128;
         y2 = evt / 128;
         if(x2 > x1-BB_SIZE && x2 < x1 +BB_SIZE && y2 > y1-BB_SIZE && y2 < y1+BB_SIZE)
+        {
+            mtx.lock();
+            active[evt] += parity ? EDVS_ON_EVT : EDVS_OFF_EVT;
+            mtx.unlock();
             count++;
+        }
         if(count >= BB_THRESHOLD)
         {
             sem_post(&sema);
             count = 0;
         }
+    }
+    else
+    {
+        mtx.lock();
+        active[evt] += parity ? EDVS_ON_EVT : EDVS_OFF_EVT;
+        mtx.unlock();
     }
 }
 

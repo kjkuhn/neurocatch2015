@@ -46,6 +46,8 @@ Tracker::Tracker()
     surf = cv::xfeatures2d::SURF::create();
 #elif USE_BRIEF_ONLY
     brief = cv::xfeatures2d::BriefDescriptorExtractor::create(BRIEF_DESCRIPTOR_LENGTH);
+#elif USE_AKAZE
+    akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB);
 #endif
     run.store(true);
     object_present.store(false);
@@ -182,7 +184,7 @@ void Tracker::calculate(uint8_t *raw_img)
     struct timespec _tstart, _tstop;
     FILE *_tfile;
 #endif /*MEASURE_TIME*/
-#if USE_ORB || USE_DYNAMIC_ORB
+#if USE_ORB
     matcher = cv::DescriptorMatcher::create(MATCHER_ORB);
 #elif USE_SURF
     matcher = cv::DescriptorMatcher::create(MATCHER_SURF);
@@ -190,10 +192,12 @@ void Tracker::calculate(uint8_t *raw_img)
     matcher = cv::DescriptorMatcher::create(MATCHER_SIFT);
 #elif USE_BRIEF_ONLY
     matcher = cv::DescriptorMatcher::create(MATCHER_BRIEF);
+#elif USE_AKAZE
+    matcher = cv::DescriptorMatcher::create(MATCHER_AKAZE);
 #endif
     std::vector<cv::DMatch>matches, good_matches;
     unsigned int it, i;
-    double max_dist, min_dist, avg_x, avg_y;
+    long double max_dist, min_dist, avg_x, avg_y;
     std::vector<cv::KeyPoint> good_old, good_new;
 
 #if FILTER_IMAGE
@@ -205,7 +209,7 @@ void Tracker::calculate(uint8_t *raw_img)
 #if MEASURE_TIME
     clock_gettime(CLOCK_REALTIME, &_tstart);
 #endif /*MEASURE_TIME*/
-#if USE_ORB || USE_DYNAMIC_ORB
+#if USE_ORB
     orb.get()->detect(img, kp);
     orb.get()->compute(img, kp, desc);
 #elif USE_SIFT
@@ -224,6 +228,9 @@ void Tracker::calculate(uint8_t *raw_img)
         }
     }
     brief.get()->compute(img, kp, desc);
+#elif USE_AKAZE
+    akaze.get()->detect(img, kp);
+    akaze.get()->compute(img, kp, desc);
 #endif /*ALGORITHM*/
 #if MEASURE_TIME
     clock_gettime(CLOCK_REALTIME, &_tstop);
@@ -400,15 +407,15 @@ void Tracker::calculate(uint8_t *raw_img)
                     //if(kp[good_matches[i].queryIdx].pt.y != 0)
                         min_dist += (double)(kp[good_matches[i].queryIdx].pt.y);
                 }
-                max_dist /= (double)i > 0 ? i : 1;
-                min_dist /= (double)i > 0 ? i : 1;
+                max_dist /= (long double)i > 0 ? i : 1;
+                min_dist /= (long double)i > 0 ? i : 1;
                 tracking_point = (int)max_dist + (int)(min_dist * 128.0);
 #if USE_SPHERO
                 sphero->setXY(max_dist, min_dist);
-                sprintf(str_info, "xdirection: %f\tydirection: %f\n\nnext: %hhu | %hhu",
+                sprintf(str_info, "xdirection: %Lf\tydirection: %Lf\n\nnext: %hhu | %hhu",
                         max_dist, min_dist, (uint8_t)(sphero->get_next() >> 8)&0xff, (uint8_t)(sphero->get_next()&0xff));
 #else
-                sprintf(str_info, "xdirection: %f\tydirection: %f\n#images: %u",
+                sprintf(str_info, "xdirection: %Lf\tydirection: %Lf\n#images: %u",
                         max_dist, min_dist, img_count);
 #endif /*USE_SPHERO*/
 

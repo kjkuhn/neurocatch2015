@@ -48,6 +48,8 @@ private:
     cv::Ptr<cv::xfeatures2d::SURF> surf;
 #elif USE_BRIEF_ONLY
     cv::Ptr<cv::xfeatures2d::BriefDescriptorExtractor> brief;
+#elif USE_AKAZE
+    cv::Ptr<cv::AKAZE> akaze;
 #endif /*ALGORITHM*/
 
     std::thread worker;
