@@ -147,9 +147,9 @@ void MainWindow::update_timer()
     fread(dat, 1, DATA_LEN, _file);
     for(i = 0; i < DATA_LEN; i++)
     {
-        if(dat[i] < 0)
+        if((char)dat[i] < 0)
             dat[i] = 100;
-        else if(dat[i] > 0)
+        else if((char)dat[i] > 0)
             dat[i] = 250;
         img.setPixel(i % 128, i / 128, qRgb(dat[i]==100?255:0, dat[i]==250?255:0, 0));
 

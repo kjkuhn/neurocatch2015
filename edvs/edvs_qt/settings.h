@@ -11,7 +11,7 @@
 
 
 /*---I/O---*/
-#define OFFLINE_FILE                "../edvs_frames02.dat"
+#define OFFLINE_FILE                "../edvs_frames03.dat"
 #define EDVS_OUT_FILE               "edvs_frames.dat"
 
 
@@ -22,11 +22,11 @@
 
 //Algorithms
 #define USE_ORB                     0
-#define USE_SIFT                    0
+#define USE_SIFT                    1
 #define USE_SURF                    0
 #define USE_BRIEF_ONLY              0
 #define USE_WEIGHTS                 0
-#define USE_AKAZE                   1
+#define USE_AKAZE                   0
 
 #define USE_DYNAMIC_BB              0
 
