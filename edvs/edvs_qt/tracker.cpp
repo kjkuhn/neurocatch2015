@@ -189,6 +189,8 @@ void Tracker::calculate(uint8_t *raw_img)
 #define TDIST dist[2]
 #define BDIST dist[3]
 
+/*filter???!!!*/
+
 void Tracker::calculate(uint8_t *raw_img)
 {
     int x, y, pos, xtranslate, ytranslate;
