@@ -35,6 +35,10 @@ namespace neurocatch
 char str_info[1024];
 uint32_t img_count;
 
+#if USE_KNN
+static uint8_t l[DATA_LEN], r[DATA_LEN], b[DATA_LEN], t[DATA_LEN];
+#endif /*USE_KNN*/
+
 
 Tracker::Tracker()
 {
@@ -48,6 +52,11 @@ Tracker::Tracker()
     brief = cv::xfeatures2d::BriefDescriptorExtractor::create(BRIEF_DESCRIPTOR_LENGTH);
 #elif USE_AKAZE
     akaze = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_MLDB);
+#elif USE_KNN
+    memset(l, 0, DATA_LEN);
+    memset(r, 0, DATA_LEN);
+    memset(t, 0, DATA_LEN);
+    memset(b, 0, DATA_LEN);
 #endif
     run.store(true);
     object_present.store(false);
@@ -175,48 +184,113 @@ void Tracker::calculate(uint8_t *raw_img)
 #elif USE_KNN
 
 
+#define RDIST dist[0]
+#define LDIST dist[1]
+#define TDIST dist[2]
+#define BDIST dist[3]
+
 void Tracker::calculate(uint8_t *raw_img)
 {
-    int x,y,i,j, pos, max, max_pos;
-    cv::Mat img, unfiltered;
-    int sum[DATA_LEN];
-    max = 0;
+    int x, y, pos, xtranslate, ytranslate;
+    long double dist[4], min, last_min;
+    uint8_t inspect[DATA_LEN];
+    //uint8_t l2[DATA_LEN], r2[DATA_LEN], b2[DATA_LEN], t2[DATA_LEN];
 
+    xtranslate = 0;
+    ytranslate = 0;
+    last_min = -1.0;
 
-    unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
-    cv::blur(unfiltered, img, cv::Size(5,5));
-    for(y = 0; y < 128; y++)
+    if(!object_present)
     {
-        for(x = 0; x < 128; x++)
+        for(y = 0; y < 128; y ++)
         {
-            pos = y*128+x;
-            sum[pos] = -(int)img.at<uint8_t>(y,x);
-            for(i = y-3 < 0? 0:y-3; i < y+3 && i < 128; i++)
-                for(j = x-3 < 0? 0:x-3; j < x+3 && j < 128; j++)
-                    sum[pos] = (int)img.at<uint8_t>(i,j);
-            if(sum[pos] > max)
+            for(x = 0; x < 128; x++)
             {
-                max = sum[pos];
-                max_pos = pos;
+                pos = y * 128 + x;
+                l[pos] = x < 127 ? raw_img[pos+1] : 0;
+                r[pos] = x > 0 ? raw_img[pos-1] : 0;
+                b[pos] = y > 0 ? raw_img[(y-1)*128+x] : 0;
+                t[pos] = x < 127 ? raw_img[(y+1)*128+x] : 0;
             }
         }
+        object_present = true;
+        return;
     }
-    free(raw_img);
-#if DEBUG
-    i = max_pos/128;    //y
-    j = max_pos%128;    //x
-    qimg = QImage(128,128, QImage::Format_RGB32);
-    for(x = 0; x < 128; x++)
-        for(y = 0; y < 128;y++)
+    else
+    {
+knn_search_lbl:
+        memset(dist, 0, sizeof(dist));
+        for(y = 0; y < 128; y++)
         {
-            if(x >= j-3 && x <= j+3 && y >= i-3 && y <= i+3 && max > 100)
-                qimg.setPixel(x,y,qRgb(255,255,0));
-            else
-                qimg.setPixel(x,y,0);
+            for(x = 0; x < 128; x++)
+            {
+                pos = y * 128 + x;
+                RDIST += pow((long double)(raw_img[pos] - r[pos]), 2.0);
+                LDIST += pow((long double)(raw_img[pos] - l[pos]), 2.0);
+                TDIST += pow((long double)(raw_img[pos] - t[pos]), 2.0);
+                BDIST += pow((long double)(raw_img[pos] - b[pos]), 2.0);
+            }
         }
-    emit sendFrame(&qimg);
+        min = -1.0;
+        for(pos = 0; pos < 4; pos++)
+        {
+            dist[pos] = sqrt(dist[pos]);
+            if((min == -1.0 || dist[pos] < min) && dist[pos] < 31)
+            {
+                min = dist[pos];
+                x = pos;
+            }
+        }
+
+        if(min == -1.0)
+        {
+            //no match
+        }
+        else if(min < last_min)
+        {
+
+        }
+
+        switch(x)
+        {
+        case 0:
+            memcpy(inspect, r, DATA_LEN);
+            xtranslate++;
+            break;
+        case 1:
+            memcpy(inspect, l, DATA_LEN);
+            xtranslate--;
+            break;
+        case 2:
+            memcpy(inspect, t, DATA_LEN);
+            ytranslate++;
+            break;
+        case 3:
+            memcpy(inspect, d, DATA_LEN);
+            ytranslate--;
+            break;
+        }
+
+        for(y = 0; y < 128; y ++)
+        {
+            for(x = 0; x < 128; x++)
+            {
+                pos = y * 128 + x;
+                l[pos] = x < 127 ? inspect[pos+1] : 0;
+                r[pos] = x > 0 ? inspect[pos-1] : 0;
+                b[pos] = y > 0 ? inspect[(y-1)*128+x] : 0;
+                t[pos] = x < 127 ? inspect[(y+1)*128+x] : 0;
+            }
+        }
+        goto knn_search_lbl;
+    }
 }
 
+
+#undef RDIST
+#undef LDIST
+#undef TDIST
+#undef BDIST
 
 #else
 
