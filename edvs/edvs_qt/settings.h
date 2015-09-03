@@ -22,11 +22,12 @@
 
 //Algorithms
 #define USE_ORB                     0
-#define USE_SIFT                    1
+#define USE_SIFT                    0
 #define USE_SURF                    0
 #define USE_BRIEF_ONLY              0
 #define USE_WEIGHTS                 0
 #define USE_AKAZE                   0
+#define USE_KNN                     1
 
 #define USE_DYNAMIC_BB              0
 
@@ -101,11 +102,13 @@
     || (USE_ORB && USE_WEIGHTS) || (USE_SURF && USE_WEIGHTS) || (USE_SIFT && USE_WEIGHTS) \
     || (USE_WEIGHTS && USE_BRIEF_ONLY) \
     || (USE_AKAZE && USE_SIFT) || (USE_ORB && USE_AKAZE) || (USE_AKAZE && USE_SURF) \
-    || (USE_AKAZE && USE_BRIEF_ONLY) || (USE_AKAZE && USE_WEIGHTS)
+    || (USE_AKAZE && USE_BRIEF_ONLY) || (USE_AKAZE && USE_WEIGHTS) \
+    || (USE_KNN && USE_SIFT) || (USE_ORB && USE_KNN) || (USE_KNN && USE_SURF) \
+    || (USE_KNN && USE_BRIEF_ONLY) || (USE_KNN && USE_WEIGHTS) || (USE_KNN && USE_AKAZE)
 #error only one kp-algortihm may be active
 #endif
 
-#if !USE_ORB && !USE_SIFT && !USE_SURF && !USE_BRIEF_ONLY && !USE_WEIGHTS && !USE_AKAZE
+#if !USE_ORB && !USE_SIFT && !USE_SURF && !USE_BRIEF_ONLY && !USE_WEIGHTS && !USE_AKAZE && !USE_KNN
 #error please select a kp-algorithm
 #endif
 

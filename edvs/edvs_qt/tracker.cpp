@@ -172,6 +172,52 @@ void Tracker::calculate(uint8_t *raw_img)
 }
 
 
+#elif USE_KNN
+
+
+void Tracker::calculate(uint8_t *raw_img)
+{
+    int x,y,i,j, pos, max, max_pos;
+    cv::Mat img, unfiltered;
+    int sum[DATA_LEN];
+    max = 0;
+
+
+    unfiltered = cv::Mat(128,128,CV_8UC1, raw_img);
+    cv::blur(unfiltered, img, cv::Size(5,5));
+    for(y = 0; y < 128; y++)
+    {
+        for(x = 0; x < 128; x++)
+        {
+            pos = y*128+x;
+            sum[pos] = -(int)img.at<uint8_t>(y,x);
+            for(i = y-3 < 0? 0:y-3; i < y+3 && i < 128; i++)
+                for(j = x-3 < 0? 0:x-3; j < x+3 && j < 128; j++)
+                    sum[pos] = (int)img.at<uint8_t>(i,j);
+            if(sum[pos] > max)
+            {
+                max = sum[pos];
+                max_pos = pos;
+            }
+        }
+    }
+    free(raw_img);
+#if DEBUG
+    i = max_pos/128;    //y
+    j = max_pos%128;    //x
+    qimg = QImage(128,128, QImage::Format_RGB32);
+    for(x = 0; x < 128; x++)
+        for(y = 0; y < 128;y++)
+        {
+            if(x >= j-3 && x <= j+3 && y >= i-3 && y <= i+3 && max > 100)
+                qimg.setPixel(x,y,qRgb(255,255,0));
+            else
+                qimg.setPixel(x,y,0);
+        }
+    emit sendFrame(&qimg);
+}
+
+
 #else
 
 
